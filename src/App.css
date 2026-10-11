@@ -1,13 +1,9 @@
-
 /* ==========================================================
    CAREER SKILL GAP ANALYZER — PROFESSIONAL UI + THEME SYSTEM
-   Responsive design | Light mode | Dark mode
    ========================================================== */
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-/* ---------- Light theme ---------- */
-
+/* ---------- Theme variables ---------- */
 :root,
 :root[data-theme="light"] {
   color-scheme: light;
@@ -35,13 +31,10 @@
   --focus-ring: #c7d2fe;
 }
 
-/* ---------- Dark theme ---------- */
-
 :root[data-theme="dark"] {
   color-scheme: dark;
-
-  --primary: #a5a0ff;
-  --primary-hover: #c0bcff;
+  --primary: #948bff;
+  --primary-hover: #b0aaff;
   --navy: #f3f4f6;
   --background: #0b1120;
   --surface: #151e30;
@@ -55,13 +48,11 @@
   --warning-bg: #3b2b13;
   --danger: #f87171;
   --danger-bg: #3b1f29;
-  --radius: 16px;
   --shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
-  --focus-ring: #8178ff;
+  --focus-ring: #635bdb;
 }
 
 /* ---------- Global reset ---------- */
-
 * {
   box-sizing: border-box;
 }
@@ -80,7 +71,6 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  padding: 0;
   background: var(--background);
   color: var(--text);
   font-family: 'Inter', 'Segoe UI', sans-serif;
@@ -172,20 +162,26 @@ p {
   flex: 1;
 }
 
+
 /* ---------- Navigation ---------- */
 
 .navbar {
   position: sticky;
   z-index: 50;
   top: 0;
+
   display: flex;
   min-height: 74px;
+  box-sizing: border-box;
   align-items: center;
   justify-content: space-between;
   gap: 22px;
+
   padding: 12px clamp(20px, 5vw, 76px);
+
   background: var(--surface);
   border-bottom: 1px solid var(--border);
+
   transition: background-color 0.25s ease, border-color 0.25s ease;
 }
 
@@ -196,6 +192,7 @@ p {
   letter-spacing: -0.6px;
   cursor: pointer;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .logo span {
@@ -207,31 +204,66 @@ p {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 18px;
 }
 
-.nav-links > a,
-.nav-links > button {
+.nav-links a {
   display: inline-flex;
-  min-height: 42px;
   align-items: center;
   justify-content: center;
-  margin: 0;
-  vertical-align: middle;
-}
+  min-height: 42px;
+  box-sizing: border-box;
 
-.nav-links a {
   color: var(--muted);
   font-weight: 600;
+  line-height: 20px;
+  text-decoration: none;
 }
 
 .nav-links a:hover {
   color: var(--primary);
 }
 
-/* ---------- Buttons ---------- */
+/* Keep buttons aligned after login */
 
+.nav-links button,
+.nav-links .primary-button,
+.nav-links .secondary-button,
+.nav-links .login-button,
+.nav-links .logout-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+
+  min-height: 42px;
+  margin: 0;
+  line-height: 20px;
+  vertical-align: middle;
+  transform: none;
+}
+
+/* Prevent navigation items from shrinking */
+
+.nav-links > * {
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .navbar {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .nav-links {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+/* ---------- Buttons ---------- */
 button,
 .primary-button,
 .secondary-button,
@@ -245,12 +277,8 @@ button,
   padding: 10px 17px;
   border-radius: 9px;
   font-weight: 650;
-  transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.2s ease,
-    color 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    box-shadow 0.2s ease, transform 0.2s ease, color 0.2s ease;
 }
 
 button:hover,
@@ -261,7 +289,7 @@ button:hover,
   transform: translateY(-1px);
 }
 
-.nav-links button:not(.theme-toggle),
+.nav-links button,
 .primary-button,
 .login-button,
 button[type="submit"] {
@@ -270,7 +298,7 @@ button[type="submit"] {
   border: 1px solid var(--primary);
 }
 
-.nav-links button:not(.theme-toggle):hover,
+.nav-links button:hover,
 .primary-button:hover,
 .login-button:hover,
 button[type="submit"]:hover {
@@ -279,12 +307,10 @@ button[type="submit"]:hover {
   border-color: var(--primary-hover);
 }
 
-/* ---------- Theme toggle ---------- */
-
+/* Theme toggle */
 .nav-links .theme-toggle,
 .theme-toggle {
-  min-height: 42px;
-  margin: 0;
+  min-height: 40px;
   padding: 9px 14px;
   color: var(--text);
   background: var(--surface);
@@ -330,7 +356,6 @@ button:disabled {
 }
 
 /* ---------- Landing page hero ---------- */
-
 .hero {
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
@@ -339,22 +364,13 @@ button:disabled {
   width: 100%;
   padding: 85px clamp(24px, 8vw, 120px);
   background:
-    radial-gradient(
-      ellipse at 90% 15%,
-      rgba(79, 70, 229, 0.12) 0,
-      transparent 42%
-    ),
+    radial-gradient(ellipse at 90% 15%, rgba(224, 231, 255, 0.85) 0, transparent 40%),
     linear-gradient(135deg, var(--surface), var(--background));
-  transition: background 0.25s ease;
 }
 
 :root[data-theme="dark"] .hero {
   background:
-    radial-gradient(
-      ellipse at 90% 15%,
-      rgba(129, 120, 255, 0.16) 0,
-      transparent 42%
-    ),
+    radial-gradient(ellipse at 90% 15%, rgba(79, 70, 229, 0.18) 0, transparent 42%),
     linear-gradient(135deg, var(--surface), var(--background));
 }
 
@@ -383,7 +399,6 @@ button:disabled {
 .hero .description {
   max-width: 570px;
   margin: 20px 0 28px;
-  color: var(--muted);
   font-size: 16px;
   line-height: 1.9;
 }
@@ -417,7 +432,6 @@ button:disabled {
 }
 
 .hero-card h2 {
-  color: var(--text);
   font-size: 24px;
 }
 
@@ -468,7 +482,6 @@ button:disabled {
 }
 
 /* ---------- Features and About ---------- */
-
 .features,
 .about {
   padding: 75px clamp(22px, 7vw, 100px);
@@ -509,31 +522,17 @@ button:disabled {
 .feature-card {
   min-width: 0;
   padding: 25px;
-  color: var(--text);
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    border-color 0.2s ease,
-    background-color 0.25s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .feature-card:hover {
   transform: translateY(-3px);
   border-color: var(--primary);
-}
-
-.feature-card h3 {
-  color: var(--text);
-}
-
-.feature-card p {
-  margin-bottom: 0;
-  color: var(--muted);
-  line-height: 1.8;
+  box-shadow: var(--shadow);
 }
 
 .feature-icon {
@@ -543,11 +542,17 @@ button:disabled {
   font-size: 23px;
 }
 
+.feature-card p {
+  margin-bottom: 0;
+  line-height: 1.8;
+}
+
 .about {
   text-align: center;
   background: var(--background);
 }
 
+/* ---------- About section ---------- */
 .about p {
   max-width: 650px;
   margin: 0 auto 24px;
@@ -555,7 +560,6 @@ button:disabled {
 }
 
 /* ---------- Dashboard and content pages ---------- */
-
 .dashboard,
 .dashboard-container,
 .skill-gap-analysis,
@@ -619,7 +623,6 @@ button:disabled {
 }
 
 /* ---------- Dashboard statistics ---------- */
-
 .stats-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   margin: 28px 0 38px;
@@ -666,13 +669,11 @@ button:disabled {
 }
 
 /* ---------- Forms and login ---------- */
-
 .login-box {
   width: 100%;
   max-width: 470px;
   margin: 25px auto;
   padding: 30px;
-  color: var(--text);
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 18px;
@@ -681,7 +682,6 @@ button:disabled {
 
 .login-box h2 {
   margin-top: 8px;
-  color: var(--text);
 }
 
 input,
@@ -694,11 +694,7 @@ textarea {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 9px;
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    background-color 0.2s ease,
-    color 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
 input::placeholder,
@@ -712,7 +708,7 @@ select:focus,
 textarea:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--focus-ring);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
 }
 
 .login-box input,
@@ -735,7 +731,6 @@ textarea:focus {
 
 .register-text {
   margin-top: 20px;
-  color: var(--muted);
   text-align: center;
   font-size: 13px;
 }
@@ -758,7 +753,6 @@ textarea:focus {
 }
 
 /* ---------- Login modal ---------- */
-
 .modal-overlay {
   position: fixed;
   z-index: 100;
@@ -779,7 +773,6 @@ textarea:focus {
 }
 
 /* ---------- Skill gap analysis ---------- */
-
 .skill-gap-summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -836,7 +829,6 @@ textarea:focus {
 }
 
 /* ---------- Learning recommendations ---------- */
-
 .recommendation-list {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-top: 25px;
@@ -845,7 +837,6 @@ textarea:focus {
 .recommendation-card {
   min-width: 0;
   padding: 24px;
-  color: var(--text);
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 15px;
@@ -857,7 +848,6 @@ textarea:focus {
 }
 
 .recommendation-card p {
-  color: var(--muted);
   line-height: 1.8;
 }
 
@@ -873,6 +863,7 @@ textarea:focus {
 
 .recommendation-card > a:hover {
   text-decoration: none;
+  filter: brightness(0.97);
 }
 
 .learning-progress {
@@ -891,7 +882,6 @@ textarea:focus {
 }
 
 /* ---------- Progress tracking ---------- */
-
 .progress-toolbar {
   display: flex;
   align-items: center;
@@ -908,7 +898,6 @@ textarea:focus {
 .progress-card {
   min-width: 0;
   padding: 23px;
-  color: var(--text);
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 15px;
@@ -922,18 +911,6 @@ textarea:focus {
   gap: 12px;
   margin-bottom: 10px;
   font-size: 13px;
-}
-
-.progress-bar,
-.progress-track {
-  overflow: hidden;
-  background: var(--border);
-  border-radius: 999px;
-}
-
-.progress-fill {
-  background: var(--primary);
-  border-radius: inherit;
 }
 
 progress {
@@ -962,51 +939,10 @@ progress::-moz-progress-bar {
   border-radius: 99px;
 }
 
-.progress-tracking-page {
-  padding-bottom: 60px;
-}
-
-.progress-tracking-page .feature-grid {
-  margin-bottom: 0;
-  row-gap: 24px;
-}
-
-.progress-tracking-page .progress-card {
-  display: flex;
-  min-height: 185px;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.progress-back-wrapper {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-  margin-top: 48px;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-}
-
-.progress-back-wrapper .secondary-button {
-  width: fit-content;
-  margin: 0;
-}
-
-/* ---------- Back buttons ---------- */
-
-.back-dashboard-button {
-  display: flex;
-  width: fit-content;
-  margin: 24px auto 20px;
-}
-
 /* ---------- Tables ---------- */
-
 table {
   width: 100%;
   overflow: hidden;
-  color: var(--text);
   background: var(--surface);
   border: 1px solid var(--border);
   border-collapse: collapse;
@@ -1020,10 +956,6 @@ td {
   border-bottom: 1px solid var(--border);
 }
 
-td {
-  color: var(--text);
-}
-
 th {
   color: var(--text);
   background: var(--surface-soft);
@@ -1032,7 +964,6 @@ th {
 }
 
 /* ---------- Alerts ---------- */
-
 [role="alert"] {
   padding: 12px 14px;
   color: var(--danger);
@@ -1050,7 +981,6 @@ th {
 }
 
 /* ---------- Footer ---------- */
-
 .app-footer {
   margin-top: auto;
   padding: 25px 20px;
@@ -1070,7 +1000,6 @@ th {
 }
 
 /* ---------- Smooth theme transitions ---------- */
-
 .navbar,
 .logo,
 .nav-links a,
@@ -1098,7 +1027,6 @@ textarea,
 }
 
 /* ---------- Tablet layout ---------- */
-
 @media (max-width: 950px) {
   .hero {
     grid-template-columns: 1fr;
@@ -1121,14 +1049,9 @@ textarea,
   .stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
-  .progress-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 /* ---------- Mobile layout ---------- */
-
 @media (max-width: 600px) {
   body {
     font-size: 13px;
@@ -1148,11 +1071,8 @@ textarea,
   }
 
   .nav-links {
-    display: flex;
     width: 100%;
-    align-items: center;
     justify-content: flex-start;
-    flex-wrap: wrap;
     gap: 10px;
   }
 
@@ -1160,13 +1080,10 @@ textarea,
     font-size: 12px;
   }
 
-  .nav-links > a,
-  .nav-links > button,
   .nav-links button,
   .nav-links .secondary-button,
   .nav-links .theme-toggle {
     min-height: 36px;
-    margin: 0;
     padding: 7px 11px;
     font-size: 12px;
   }
@@ -1264,19 +1181,6 @@ textarea,
     width: 100%;
   }
 
-  .progress-tracking-page {
-    padding-bottom: 40px;
-  }
-
-  .progress-back-wrapper {
-    margin-top: 32px;
-  }
-
-  .progress-grid {
-    grid-template-columns: 1fr;
-    gap: 14px;
-  }
-
   th,
   td {
     padding: 9px;
@@ -1285,13 +1189,544 @@ textarea,
 }
 
 /* ---------- Reduced motion accessibility ---------- */
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
-    animation-duration: 0.01ms !important;
+  }
+}
+/* ==========================================
+   PROGRESS TRACKING — UI IMPROVEMENTS
+   ========================================== */
+
+/* Main progress page */
+.progress-page,
+.progress-tracking,
+.progress-container {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 42px clamp(20px, 5vw, 64px);
+  color: var(--text);
+}
+
+/* Page heading */
+.progress-page h1,
+.progress-tracking h1,
+.progress-container h1 {
+  margin-bottom: 10px;
+  font-size: clamp(28px, 3vw, 38px);
+  font-weight: 800;
+  text-align: center;
+}
+
+.progress-page > p,
+.progress-tracking > p,
+.progress-container > p {
+  color: var(--muted);
+  text-align: center;
+}
+
+/* Progress cards grid */
+.progress-page .progress-grid,
+.progress-tracking .progress-grid,
+.progress-container .progress-grid,
+.progress-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+  margin: 28px 0;
+}
+
+/* Individual skill cards */
+.progress-page .progress-card,
+.progress-tracking .progress-card,
+.progress-container .progress-card,
+.progress-grid .progress-card {
+  display: flex;
+  min-width: 0;
+  min-height: 185px;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 23px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.progress-page .progress-card:hover,
+.progress-tracking .progress-card:hover,
+.progress-container .progress-card:hover,
+.progress-grid .progress-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--primary);
+}
+
+/* Skill icon */
+.progress-card .progress-icon,
+.progress-card .stat-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  place-items: center;
+  color: var(--primary);
+  background: var(--surface-soft);
+  border-radius: 12px;
+  font-size: 21px;
+}
+
+/* Skill title */
+.progress-card h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 750;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+/* Status and percentage row */
+.progress-card .progress-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+/* Progress bar */
+.progress-card progress {
+  width: 100%;
+  height: 10px;
+  margin-top: 10px;
+  overflow: hidden;
+  background: var(--border);
+  border: 0;
+  border-radius: 999px;
+  accent-color: var(--primary);
+}
+
+.progress-card progress::-webkit-progress-bar {
+  background: var(--border);
+  border-radius: 999px;
+}
+
+.progress-card progress::-webkit-progress-value {
+  background: var(--primary);
+  border-radius: 999px;
+}
+
+.progress-card progress::-moz-progress-bar {
+  background: var(--primary);
+  border-radius: 999px;
+}
+
+/* Saved progress message */
+.progress-card .saved-message {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+/* Refresh button and record count */
+.progress-page .progress-toolbar,
+.progress-tracking .progress-toolbar,
+.progress-container .progress-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 24px 0;
+}
+
+.progress-toolbar button {
+  color: #fff;
+  background: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: 9px;
+  font-weight: 700;
+}
+
+.progress-toolbar button:hover {
+  background: var(--primary-hover);
+}
+
+/* Back to dashboard */
+.progress-page .secondary-button,
+.progress-tracking .secondary-button,
+.progress-container .secondary-button {
+  display: flex;
+  width: fit-content;
+  margin: 28px auto 0;
+}
+
+/* Tablet */
+@media (max-width: 950px) {
+  .progress-page .progress-grid,
+  .progress-tracking .progress-grid,
+  .progress-container .progress-grid,
+  .progress-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .progress-page,
+  .progress-tracking,
+  .progress-container {
+    padding: 28px 16px;
+  }
+
+  .progress-page .progress-grid,
+  .progress-tracking .progress-grid,
+  .progress-container .progress-grid,
+  .progress-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .progress-page .progress-card,
+  .progress-tracking .progress-card,
+  .progress-container .progress-card,
+  .progress-grid .progress-card {
+    min-height: 160px;
+    padding: 19px;
+  }
+
+  .progress-page .progress-toolbar,
+  .progress-tracking .progress-toolbar,
+  .progress-container .progress-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .progress-toolbar button {
+    width: 100%;
+  }
+}
+/* Add space before and below Back to Dashboard */
+.progress-page .secondary-button,
+.progress-tracking .secondary-button,
+.progress-container .secondary-button,
+.progress-page button.back-button,
+.progress-tracking button.back-button {
+  margin-top: 32px;
+  margin-bottom: 30px;
+}
+
+/* Ensure the last row of cards has enough bottom spacing */
+.progress-grid,
+.progress-page .progress-grid,
+.progress-tracking .progress-grid,
+.progress-container .progress-grid {
+  margin-bottom: 32px;
+}
+
+/* Keep the button centered */
+.progress-page .secondary-button,
+.progress-tracking .secondary-button,
+.progress-container .secondary-button {
+  display: flex;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Add bottom space to the whole page */
+body {
+  padding-bottom: 35px;
+}
+
+.back-dashboard-button {
+  display: flex;
+  width: fit-content;
+  margin: 24px auto 20px;
+}
+
+
+css
+.progress-tracking-page {
+  padding-bottom: 60px;
+}
+
+.progress-tracking-page .feature-grid {
+  margin-bottom: 0;
+  row-gap: 24px;
+}
+
+.progress-back-wrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 48px;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+}
+
+.progress-back-wrapper .secondary-button {
+  margin: 0;
+}
+
+@media (max-width: 600px) {
+  .progress-tracking-page {
+    padding-bottom: 40px;
+  }
+
+  .progress-back-wrapper {
+    margin-top: 32px;
+  }
+}
+
+
+/* Keep the Get Started button aligned correctly */
+.hero-buttons .get-started-button {
+  position: relative;
+  top: 0;
+}
+
+
+
+/* Fix Back to Dashboard button on Projects page */
+.dashboard > .secondary-button {
+  display: block;
+  margin: 24px auto 20px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Project details - follow the active app theme */
+.project-details {
+  background: var(--card-bg, #151f32);
+  color: var(--text-color, #f8fafc);
+  border: 1px solid var(--border-color, #334155);
+  transition: background 0.25s ease, color 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.project-details h2,
+.project-details h3 {
+  color: var(--text-color, #f8fafc);
+}
+
+.project-details p {
+  color: var(--text-secondary, #cbd5e1);
+}
+
+.project-details .feature-icon {
+  background: var(--icon-bg, rgba(151, 132, 255, 0.13));
+}
+
+
+/* Match Project Details card to Light Theme */
+.light-theme .project-details,
+[data-theme="light"] .project-details {
+  background: #ffffff;
+  color: #1e293b;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.light-theme .project-details h2,
+.light-theme .project-details h3,
+[data-theme="light"] .project-details h2,
+[data-theme="light"] .project-details h3 {
+  color: #1e293b;
+}
+
+.light-theme .project-details p,
+[data-theme="light"] .project-details p {
+  color: #475569;
+}
+
+.light-theme .project-details .feature-icon,
+[data-theme="light"] .project-details .feature-icon {
+  background: #f1edff;
+}
+
+.light-theme .project-details .secondary-button,
+[data-theme="light"] .project-details .secondary-button {
+  background: #f5f3ff;
+  color: #6d5bd0;
+  border-color: #ddd6fe;
+}
+
+
+/* Premium Project Workspace */
+.project-workspace {
+  --workspace-bg: #ffffff;
+  --workspace-text: #172033;
+  --workspace-muted: #64748b;
+  --workspace-border: #e2e8f0;
+  --workspace-accent-bg: #f1edff;
+  --workspace-accent: #6d5bd0;
+
+  width: min(100%, 680px);
+  box-sizing: border-box;
+  margin: 30px auto;
+  padding: 30px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 22px;
+  background: var(--workspace-bg);
+  color: var(--workspace-text);
+  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.09);
+  text-align: left;
+  transition: background 0.25s ease, color 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.project-workspace-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.project-folder-icon {
+  width: 58px;
+  height: 58px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 17px;
+  background: var(--workspace-accent-bg);
+  font-size: 30px;
+}
+
+.project-workspace-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.project-workspace-title h2 {
+  margin: 0 0 6px;
+  color: var(--workspace-text);
+  font-size: clamp(20px, 3vw, 27px);
+  overflow-wrap: anywhere;
+}
+
+.project-workspace-title p {
+  margin: 0;
+  color: var(--workspace-muted);
+  font-size: 14px;
+}
+
+.project-saved-badge {
+  padding: 6px 11px;
+  border-radius: 20px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.project-workspace-divider {
+  height: 1px;
+  margin: 24px 0;
+  background: var(--workspace-border);
+}
+
+.project-info-section {
+  margin: 24px 0;
+}
+
+.project-info-section h3 {
+  margin: 0 0 10px;
+  color: var(--workspace-accent);
+  font-size: 15px;
+}
+
+.project-info-section p {
+  margin: 0;
+  color: var(--workspace-muted);
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+.project-tech-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.project-tech-tag {
+  padding: 8px 12px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 10px;
+  background: var(--workspace-accent-bg);
+  color: var(--workspace-accent);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.project-workspace-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.project-workspace-footer > span {
+  color: var(--workspace-muted);
+  font-size: 13px;
+}
+
+.project-back-button {
+  padding: 12px 17px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 11px;
+  background: var(--workspace-accent-bg);
+  color: var(--workspace-accent);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.project-back-button:hover {
+  transform: translateY(-2px);
+}
+
+/* Dark theme */
+.dark-theme .project-workspace,
+[data-theme="dark"] .project-workspace {
+  --workspace-bg: #111827;
+  --workspace-text: #f8fafc;
+  --workspace-muted: #cbd5e1;
+  --workspace-border: #30394b;
+  --workspace-accent-bg: #252b43;
+  --workspace-accent: #b6a6ff;
+
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 600px) {
+  .project-workspace {
+    padding: 20px;
+    border-radius: 17px;
+  }
+
+  .project-workspace-header {
+    flex-wrap: wrap;
+  }
+
+  .project-workspace-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .project-back-button {
+    width: 100%;
   }
 }
