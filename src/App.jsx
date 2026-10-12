@@ -79,7 +79,6 @@ function App() {
   );
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [editStudentIdInput, setEditStudentIdInput] = useState("");
   const [editUserNameInput, setEditUserNameInput] = useState("");
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -594,17 +593,15 @@ const handleEnterToNext = (event) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [profileDropdownOpen]);
 
-  // Unified navigation handlers for Navbar, Dropdown, and Sidebar
+  // Unified navigation handlers for Navbar and Profile Dropdown
   const handleNavHome = () => {
     setProfileDropdownOpen(false);
-    setSidebarOpen(false);
     setPage("home");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleNavFeatures = () => {
     setProfileDropdownOpen(false);
-    setSidebarOpen(false);
     if (page !== "home") {
       setPage("home");
       setTimeout(() => {
@@ -617,7 +614,6 @@ const handleEnterToNext = (event) => {
 
   const handleNavAbout = () => {
     setProfileDropdownOpen(false);
-    setSidebarOpen(false);
     if (page !== "home") {
       setPage("home");
       setTimeout(() => {
@@ -630,20 +626,17 @@ const handleEnterToNext = (event) => {
 
   const handleNavDashboard = () => {
     setProfileDropdownOpen(false);
-    setSidebarOpen(false);
     goToDashboard();
   };
 
   const handleNavRecycleBin = () => {
     setProfileDropdownOpen(false);
-    setSidebarOpen(false);
     setPage("recycleBin");
     setRecycleMessage("");
   };
 
   const handleOpenProfileModal = () => {
     setProfileDropdownOpen(false);
-    setSidebarOpen(false);
     setEditStudentIdInput(studentId);
     setEditUserNameInput(currentUserName);
     setIsEditingProfile(false);
@@ -662,7 +655,6 @@ const handleEnterToNext = (event) => {
 
   const handleLogoutAction = () => {
     setProfileDropdownOpen(false);
-    setSidebarOpen(false);
     promptLogout();
   };
 
@@ -1795,7 +1787,6 @@ const deleteProject = async (projectId) => {
     setRecycleBin([]);
     setProfileDropdownOpen(false);
     setProfileModalOpen(false);
-    setSidebarOpen(false);
     setPage("home");
   };
 
@@ -1874,16 +1865,6 @@ const deleteProject = async (projectId) => {
       {/* Navigation */}
       <nav className="navbar">
         <div className="navbar-left">
-          <button
-            type="button"
-            className="hamburger-btn"
-            onClick={() => setSidebarOpen(true)}
-            aria-label="Toggle navigation menu"
-            title="Open Menu"
-          >
-            <span>☰</span>
-          </button>
-
           <div
             className="logo"
             onClick={handleNavHome}
@@ -1899,54 +1880,9 @@ const deleteProject = async (projectId) => {
           >
             <span>✦</span> Career Skill Gap Analyzer
           </div>
-          <span className="institution-pill">ANURAG UNIVERSITY</span>
         </div>
 
         <div className="nav-links">
-          <button
-            type="button"
-            className={`nav-link-btn ${page === "home" ? "active" : ""}`}
-            onClick={handleNavHome}
-          >
-            Home
-          </button>
-          <button
-            type="button"
-            className="nav-link-btn"
-            onClick={handleNavFeatures}
-          >
-            Features
-          </button>
-          <button
-            type="button"
-            className="nav-link-btn"
-            onClick={handleNavAbout}
-          >
-            About
-          </button>
-
-          {userId() && (
-            <>
-              <button
-                type="button"
-                className={`nav-link-btn ${page === "dashboard" ? "active" : ""}`}
-                onClick={handleNavDashboard}
-              >
-                Dashboard
-              </button>
-              <button
-                type="button"
-                className={`nav-link-btn recycle-nav-btn ${page === "recycleBin" ? "active" : ""}`}
-                onClick={handleNavRecycleBin}
-                title="Open Recycle Bin"
-              >
-                🗑️ Bin {recycleBin.length > 0 && <span className="recycle-nav-badge">{recycleBin.length}</span>}
-              </button>
-            </>
-          )}
-
-          {themeButton}
-
           {userId() ? (
             <div className="profile-dropdown-container">
               <button
@@ -1958,7 +1894,7 @@ const deleteProject = async (projectId) => {
               >
                 <StudentAvatar size={34} />
                 <span className="nav-profile-roll">{studentId || "24eg107e54"}</span>
-                <span className="nav-profile-chevron">{profileDropdownOpen ? "▴" : "▾"}</span>
+                <span className={`nav-profile-chevron ${profileDropdownOpen ? "open" : ""}`}>▾</span>
               </button>
 
               {profileDropdownOpen && (
@@ -1979,73 +1915,87 @@ const deleteProject = async (projectId) => {
                   <div className="profile-dropdown-divider" />
 
                   <div className="profile-dropdown-menu">
-                    <button
-                      type="button"
-                      className="profile-dropdown-item"
+                    <div
+                      className="profile-menu-item"
+                      role="button"
+                      tabIndex={0}
                       onClick={handleOpenProfileModal}
+                      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && handleOpenProfileModal()}
                     >
-                      <span className="profile-item-icon">👤</span>
-                      <span className="profile-item-label">My Profile</span>
-                      <span className="profile-item-hint">View details</span>
-                    </button>
+                      <span className="profile-menu-icon">👤</span>
+                      <span className="profile-menu-label">My Profile</span>
+                      <span className="profile-menu-hint">View details</span>
+                    </div>
 
-                    <button
-                      type="button"
-                      className="profile-dropdown-item"
+                    <div
+                      className={`profile-menu-item ${page === "home" ? "active" : ""}`}
+                      role="button"
+                      tabIndex={0}
                       onClick={handleNavHome}
+                      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && handleNavHome()}
                     >
-                      <span className="profile-item-icon">🏠</span>
-                      <span className="profile-item-label">Home</span>
-                    </button>
+                      <span className="profile-menu-icon">🏠</span>
+                      <span className="profile-menu-label">Home</span>
+                    </div>
 
-                    <button
-                      type="button"
-                      className="profile-dropdown-item"
+                    <div
+                      className="profile-menu-item"
+                      role="button"
+                      tabIndex={0}
                       onClick={handleNavFeatures}
+                      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && handleNavFeatures()}
                     >
-                      <span className="profile-item-icon">⚡</span>
-                      <span className="profile-item-label">Features</span>
-                    </button>
+                      <span className="profile-menu-icon">⚡</span>
+                      <span className="profile-menu-label">Features</span>
+                    </div>
 
-                    <button
-                      type="button"
-                      className="profile-dropdown-item"
+                    <div
+                      className="profile-menu-item"
+                      role="button"
+                      tabIndex={0}
                       onClick={handleNavAbout}
+                      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && handleNavAbout()}
                     >
-                      <span className="profile-item-icon">ℹ️</span>
-                      <span className="profile-item-label">About</span>
-                    </button>
+                      <span className="profile-menu-icon">ℹ️</span>
+                      <span className="profile-menu-label">About</span>
+                    </div>
 
-                    <button
-                      type="button"
-                      className="profile-dropdown-item"
+                    <div
+                      className={`profile-menu-item ${page === "dashboard" ? "active" : ""}`}
+                      role="button"
+                      tabIndex={0}
                       onClick={handleNavDashboard}
+                      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && handleNavDashboard()}
                     >
-                      <span className="profile-item-icon">📊</span>
-                      <span className="profile-item-label">Dashboard</span>
-                    </button>
+                      <span className="profile-menu-icon">📊</span>
+                      <span className="profile-menu-label">Dashboard</span>
+                    </div>
 
-                    <button
-                      type="button"
-                      className="profile-dropdown-item"
+                    <div
+                      className={`profile-menu-item ${page === "recycleBin" ? "active" : ""}`}
+                      role="button"
+                      tabIndex={0}
                       onClick={handleNavRecycleBin}
+                      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && handleNavRecycleBin()}
                     >
-                      <span className="profile-item-icon">🗑️</span>
-                      <span className="profile-item-label">Bin</span>
+                      <span className="profile-menu-icon">🗑️</span>
+                      <span className="profile-menu-label">Bin</span>
                       {recycleBin.length > 0 && (
-                        <span className="profile-item-badge">{recycleBin.length}</span>
+                        <span className="profile-menu-badge">{recycleBin.length}</span>
                       )}
-                    </button>
+                    </div>
 
-                    <button
-                      type="button"
-                      className="profile-dropdown-item"
+                    <div
+                      className="profile-menu-item"
+                      role="button"
+                      tabIndex={0}
                       onClick={toggleTheme}
+                      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && toggleTheme()}
                     >
-                      <span className="profile-item-icon">{theme === "light" ? "🌙" : "☀️"}</span>
-                      <span className="profile-item-label">Theme: {theme === "light" ? "Light" : "Dark"}</span>
-                      <span className="profile-item-hint">Toggle</span>
-                    </button>
+                      <span className="profile-menu-icon">{theme === "light" ? "🌙" : "☀️"}</span>
+                      <span className="profile-menu-label">Theme: {theme === "light" ? "Light" : "Dark"}</span>
+                      <span className="profile-menu-hint">Toggle</span>
+                    </div>
                   </div>
 
                   <div className="profile-dropdown-divider" />
@@ -2063,133 +2013,25 @@ const deleteProject = async (projectId) => {
               )}
             </div>
           ) : (
-            <button
-              type="button"
-              className="login-button"
-              onClick={() => {
-                setPage("login");
-                setMessage("");
-              }}
-            >
-              Login
-            </button>
+            <>
+              <a href="#home" onClick={handleNavHome}>Home</a>
+              <a href="#features" onClick={handleNavFeatures}>Features</a>
+              <a href="#about" onClick={handleNavAbout}>About</a>
+              {themeButton}
+              <button
+                type="button"
+                className="login-button"
+                onClick={() => {
+                  setPage("login");
+                  setMessage("");
+                }}
+              >
+                Login
+              </button>
+            </>
           )}
         </div>
       </nav>
-
-      {/* Slide-out Sidebar Drawer (Mobile & Desktop) */}
-      {sidebarOpen && (
-        <div className="sidebar-drawer-overlay" onClick={() => setSidebarOpen(false)}>
-          <div className="sidebar-drawer" onClick={(e) => e.stopPropagation()}>
-            <div className="sidebar-header">
-              <div className="sidebar-brand">
-                <div className="sidebar-univ">🏛️ ANURAG UNIVERSITY</div>
-                <div className="sidebar-app">Career Skill Gap Analyzer</div>
-              </div>
-              <button
-                type="button"
-                className="sidebar-close-btn"
-                onClick={() => setSidebarOpen(false)}
-                title="Close menu"
-              >
-                ✕
-              </button>
-            </div>
-
-            {userId() && (
-              <div className="sidebar-user-card" onClick={handleOpenProfileModal}>
-                <StudentAvatar size={50} />
-                <div className="sidebar-user-meta">
-                  <div className="sidebar-user-id">{studentId || "24eg107e54"}</div>
-                  <div className="sidebar-user-name">{currentUserName || "Student"}</div>
-                  <div className="sidebar-user-tag">Student • Computer Science</div>
-                </div>
-              </div>
-            )}
-
-            <div className="sidebar-section-title">NAVIGATION MENU</div>
-            <div className="sidebar-nav-list">
-              <button
-                type="button"
-                className={`sidebar-nav-item ${page === "home" ? "active" : ""}`}
-                onClick={handleNavHome}
-              >
-                <span>🏠</span> Home
-              </button>
-              <button
-                type="button"
-                className="sidebar-nav-item"
-                onClick={handleNavFeatures}
-              >
-                <span>⚡</span> Features
-              </button>
-              <button
-                type="button"
-                className="sidebar-nav-item"
-                onClick={handleNavAbout}
-              >
-                <span>ℹ️</span> About
-              </button>
-              {userId() ? (
-                <>
-                  <button
-                    type="button"
-                    className={`sidebar-nav-item ${page === "dashboard" ? "active" : ""}`}
-                    onClick={handleNavDashboard}
-                  >
-                    <span>📊</span> Dashboard
-                  </button>
-                  <button
-                    type="button"
-                    className={`sidebar-nav-item ${page === "recycleBin" ? "active" : ""}`}
-                    onClick={handleNavRecycleBin}
-                  >
-                    <span>🗑️</span> Bin {recycleBin.length > 0 && <span className="sidebar-badge">{recycleBin.length}</span>}
-                  </button>
-                  <button
-                    type="button"
-                    className="sidebar-nav-item"
-                    onClick={handleOpenProfileModal}
-                  >
-                    <span>👤</span> My Profile
-                  </button>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  className="sidebar-nav-item"
-                  onClick={() => {
-                    setPage("login");
-                    setMessage("");
-                    setSidebarOpen(false);
-                  }}
-                >
-                  <span>🔐</span> Login / Register
-                </button>
-              )}
-              <button
-                type="button"
-                className="sidebar-nav-item"
-                onClick={toggleTheme}
-              >
-                <span>{theme === "light" ? "🌙" : "☀️"}</span> Theme: {theme === "light" ? "Light" : "Dark"}
-              </button>
-            </div>
-
-            {userId() && (
-              <div className="sidebar-footer">
-                <button
-                  type="button"
-                  className="sidebar-logout-btn"
-                  onClick={handleLogoutAction}
-                >
-                  <span>🚪</span> Logout
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
 
 
