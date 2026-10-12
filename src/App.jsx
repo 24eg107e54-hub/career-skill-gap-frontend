@@ -135,6 +135,316 @@ const [selectedProject, setSelectedProject] = useState(null);
 
   const [certificationsLoading, setCertificationsLoading] = useState(false);
 
+  // Confirmation Modal state
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    confirmText: "Confirm",
+    isDanger: true,
+    action: null,
+  });
+
+  const openConfirmModal = ({
+    title,
+    message,
+    confirmText = "Confirm",
+    isDanger = true,
+    action,
+  }) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      confirmText,
+      isDanger,
+      action,
+    });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal({
+      isOpen: false,
+      title: "",
+      message: "",
+      confirmText: "Confirm",
+      isDanger: true,
+      action: null,
+    });
+  };
+
+  const handleExecuteConfirm = async () => {
+    const actionToRun = confirmModal.action;
+    closeConfirmModal();
+    if (typeof actionToRun === "function") {
+      await actionToRun();
+    }
+  };
+
+  // Recycle Bin state
+  const [recycleBin, setRecycleBin] = useState(() => {
+    const id = localStorage.getItem("userId");
+    if (!id) return [];
+    try {
+      return JSON.parse(localStorage.getItem(`recycle_bin_${id}`)) || [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [recycleSearch, setRecycleSearch] = useState("");
+  const [recycleTypeFilter, setRecycleTypeFilter] = useState("all");
+  const [recycleDateFilter, setRecycleDateFilter] = useState("all");
+  const [recycleViewMode, setRecycleViewMode] = useState("grid");
+  const [recycleMessage, setRecycleMessage] = useState("");
+
+  const saveRecycleBin = (items) => {
+    setRecycleBin(items);
+    const id = localStorage.getItem("userId");
+    if (id) {
+      localStorage.setItem(`recycle_bin_${id}`, JSON.stringify(items));
+    }
+  };
+
+  const addToRecycleBin = (type, title, details, payload) => {
+    const newItem = {
+      binId: `bin_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
+      type,
+      title,
+      details,
+      payload,
+      deletedAt: new Date().toISOString(),
+    };
+    const updated = [newItem, ...recycleBin];
+    saveRecycleBin(updated);
+  };
+
+  // Filter recycle bin items by query, type, and date
+  const filteredRecycleItems = recycleBin.filter((item) => {
+    if (recycleSearch.trim()) {
+      const q = recycleSearch.toLowerCase();
+      const matchTitle = (item.title || "").toLowerCase().includes(q);
+      const matchDetails = (item.details || "").toLowerCase().includes(q);
+      if (!matchTitle && !matchDetails) return false;
+    }
+    if (recycleTypeFilter !== "all" && item.type !== recycleTypeFilter) {
+      return false;
+    }
+    if (recycleDateFilter !== "all" && item.deletedAt) {
+      const itemDate = new Date(item.deletedAt);
+      const now = new Date();
+      if (recycleDateFilter === "today") {
+        const isSameDay =
+          itemDate.getDate() === now.getDate() &&
+          itemDate.getMonth() === now.getMonth() &&
+          itemDate.getFullYear() === now.getFullYear();
+        if (!isSameDay) return false;
+      } else if (recycleDateFilter === "week") {
+        const diffDays = (now - itemDate) / (1000 * 60 * 60 * 24);
+        if (diffDays > 7) return false;
+      } else if (recycleDateFilter === "month") {
+        const isSameMonth =
+          itemDate.getMonth() === now.getMonth() &&
+          itemDate.getFullYear() === now.getFullYear();
+        if (!isSameMonth) return false;
+      }
+    }
+    return true;
+  });
+
+  // Prompt confirmation before deleting a technical skill
+  const promptDeleteSkill = (item) => {
+    openConfirmModal({
+      title: "DO YOU WANT TO DELETE?",
+      message: `Are you sure you want to delete technical skill "${item.skill}"? It will be moved to the Recycle Bin where you can restore it anytime.`,
+      confirmText: "Yes, Delete",
+      isDanger: true,
+      action: async () => {
+        addToRecycleBin(
+          "Technical Skill",
+          item.skill,
+          `Proficiency: ${item.proficiencyLevel || "Not specified"}`,
+          item
+        );
+        await deleteSkill(item.id);
+      },
+    });
+  };
+
+  // Prompt confirmation before deleting a project
+  const promptDeleteProject = (project) => {
+    openConfirmModal({
+      title: "DO YOU WANT TO DELETE?",
+      message: `Are you sure you want to delete project "${project.projectTitle}"? It will be moved to the Recycle Bin where you can restore it anytime.`,
+      confirmText: "Yes, Delete",
+      isDanger: true,
+      action: async () => {
+        addToRecycleBin(
+          "Project",
+          project.projectTitle,
+          project.techStack ? `Tech Stack: ${project.techStack}` : (project.projectDescription || ""),
+          project
+        );
+        await deleteProject(project.id);
+      },
+    });
+  };
+
+  // Prompt confirmation before deleting a certification
+  const promptDeleteCertification = (cert) => {
+    openConfirmModal({
+      title: "DO YOU WANT TO DELETE?",
+      message: `Are you sure you want to delete certification "${cert.certificationName}"? It will be moved to the Recycle Bin where you can restore it anytime.`,
+      confirmText: "Yes, Delete",
+      isDanger: true,
+      action: async () => {
+        addToRecycleBin(
+          "Certification",
+          cert.certificationName,
+          `Issued By: ${cert.issuingOrganization || "N/A"} (${cert.issueYear || "N/A"})`,
+          cert
+        );
+        await deleteCertification(cert.id);
+      },
+    });
+  };
+
+  // Prompt confirmation before deleting education record
+  const promptDeleteEducation = (record) => {
+    openConfirmModal({
+      title: "DO YOU WANT TO DELETE?",
+      message: `Are you sure you want to delete education record "${record.degree} - ${record.college}"? It will be moved to the Recycle Bin where you can restore it anytime.`,
+      confirmText: "Yes, Delete",
+      isDanger: true,
+      action: async () => {
+        addToRecycleBin(
+          "Education",
+          `${record.degree} - ${record.college}`,
+          `Specialization: ${record.specialization || "N/A"}, Year: ${record.graduationYear || "N/A"}`,
+          record
+        );
+        await deleteEducation(record.id);
+      },
+    });
+  };
+
+  // Prompt confirmation before logout
+  const promptLogout = () => {
+    openConfirmModal({
+      title: "ARE YOU SURE YOU WANT TO LOGOUT?",
+      message: "Do you want to logout? You will need your login credentials to sign back in.",
+      confirmText: "Yes, Logout",
+      isDanger: false,
+      action: () => {
+        logout();
+      },
+    });
+  };
+
+  // Restore deleted item back to user profile via backend API
+  const restoreFromRecycleBin = async (binItem) => {
+    if (!binItem || !userId()) return;
+    try {
+      const currentUserId = Number(userId());
+      if (binItem.type === "Technical Skill") {
+        const payload = {
+          skill: binItem.payload.skill,
+          proficiencyLevel: binItem.payload.proficiencyLevel || "INTERMEDIATE",
+          userId: currentUserId,
+        };
+        const res = await fetch(`${API}/api/skills`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error("Failed to restore skill.");
+        await loadSkills();
+        if (localStorage.getItem("targetCareer")) loadSkillGaps();
+      } else if (binItem.type === "Project") {
+        const payload = {
+          projectTitle: binItem.payload.projectTitle,
+          projectDescription: binItem.payload.projectDescription || "",
+          techStack: binItem.payload.techStack || "",
+          projectRole: binItem.payload.projectRole || "",
+          projectLink: binItem.payload.projectLink || "",
+          userId: currentUserId,
+        };
+        const res = await fetch(`${API}/api/projects`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error("Failed to restore project.");
+        await loadProjects();
+      } else if (binItem.type === "Certification") {
+        const payload = {
+          certificationName: binItem.payload.certificationName,
+          issuingOrganization: binItem.payload.issuingOrganization || "",
+          issueYear: binItem.payload.issueYear ? Number(binItem.payload.issueYear) : new Date().getFullYear(),
+          userId: currentUserId,
+        };
+        const res = await fetch(`${API}/api/certifications`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error("Failed to restore certification.");
+        await loadCertifications();
+      } else if (binItem.type === "Education") {
+        const payload = {
+          degree: binItem.payload.degree,
+          college: binItem.payload.college,
+          specialization: binItem.payload.specialization || "",
+          graduationYear: Number(binItem.payload.graduationYear) || new Date().getFullYear(),
+          userId: currentUserId,
+        };
+        const res = await fetch(`${API}/api/education`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error("Failed to restore education record.");
+        await loadEducation();
+      }
+
+      const updated = recycleBin.filter((i) => i.binId !== binItem.binId);
+      saveRecycleBin(updated);
+      setRecycleMessage(`Successfully restored "${binItem.title}" back to your profile!`);
+    } catch (err) {
+      setRecycleMessage(err.message || "Failed to restore item.");
+    }
+  };
+
+  // Permanently delete single item from Recycle Bin
+  const promptPermanentDelete = (binItem) => {
+    openConfirmModal({
+      title: "DO YOU WANT TO DELETE PERMANENTLY?",
+      message: `Are you sure you want to permanently delete "${binItem.title}" from the Recycle Bin? This action cannot be reversed.`,
+      confirmText: "Delete Permanently",
+      isDanger: true,
+      action: () => {
+        const updated = recycleBin.filter((i) => i.binId !== binItem.binId);
+        saveRecycleBin(updated);
+        setRecycleMessage(`Permanently removed "${binItem.title}".`);
+      },
+    });
+  };
+
+  // Permanently empty entire Recycle Bin
+  const promptEmptyBin = () => {
+    if (recycleBin.length === 0) return;
+    openConfirmModal({
+      title: "DO YOU WANT TO EMPTY RECYCLE BIN?",
+      message: `Are you sure you want to permanently delete all ${recycleBin.length} item(s) in the Recycle Bin? This cannot be undone.`,
+      confirmText: "Empty Recycle Bin",
+      isDanger: true,
+      action: () => {
+        saveRecycleBin([]);
+        setRecycleMessage("Recycle bin has been emptied.");
+      },
+    });
+  };
+
 
   // Move to the next field when Enter is pressed
 
@@ -357,6 +667,13 @@ const handleEnterToNext = (event) => {
 
         localStorage.setItem("userId", String(data.id));
 
+        try {
+          const userBin = JSON.parse(localStorage.getItem(`recycle_bin_${data.id}`)) || [];
+          setRecycleBin(userBin);
+        } catch {
+          setRecycleBin([]);
+        }
+
         setCareerName(localStorage.getItem("targetCareer") || "");
 
         setMessage("");
@@ -551,7 +868,20 @@ const handleEnterToNext = (event) => {
 
   };
 
-
+  // Delete education record
+  const deleteEducation = async (educationId) => {
+    if (!educationId) return;
+    try {
+      const res = await fetch(`${API}/api/education/${educationId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete education record.");
+      await loadEducation();
+      setEducationMessage("Education record removed successfully!");
+    } catch (error) {
+      setEducationMessage(error.message || "Unable to delete education record.");
+    }
+  };
 
   // Load technical skills for the logged-in user
   const loadSkills = async () => {
@@ -1356,6 +1686,8 @@ const deleteProject = async (projectId) => {
 
     setCertificationMessage("");
 
+    setRecycleBin([]);
+
     setPage("home");
 
   };
@@ -1490,7 +1822,18 @@ const deleteProject = async (projectId) => {
     </button>
     <button
       type="button"
-      onClick={logout}
+      className="recycle-nav-btn"
+      onClick={() => {
+        setPage("recycleBin");
+        setRecycleMessage("");
+      }}
+      title="Open Recycle Bin"
+    >
+      🗑️ Bin {recycleBin.length > 0 && <span className="recycle-nav-badge">{recycleBin.length}</span>}
+    </button>
+    <button
+      type="button"
+      onClick={promptLogout}
     >
       Logout
     </button>
@@ -1515,22 +1858,31 @@ const deleteProject = async (projectId) => {
 
             <>
 
-              {userId() && page !== "dashboard" && (
-
-                <button
-
-                  type="button"
-
-                  className="secondary-button nav-cta-button"
-
-                  onClick={goToDashboard}
-
-                >
-
-                  Dashboard
-
-                </button>
-
+              {userId() && (
+                <>
+                  {page !== "dashboard" && (
+                    <button
+                      type="button"
+                      className="secondary-button nav-cta-button"
+                      onClick={goToDashboard}
+                    >
+                      Dashboard
+                    </button>
+                  )}
+                  {page !== "recycleBin" && (
+                    <button
+                      type="button"
+                      className="secondary-button recycle-nav-btn"
+                      onClick={() => {
+                        setPage("recycleBin");
+                        setRecycleMessage("");
+                      }}
+                      title="Open Recycle Bin"
+                    >
+                      🗑️ Bin {recycleBin.length > 0 && <span className="recycle-nav-badge">{recycleBin.length}</span>}
+                    </button>
+                  )}
+                </>
               )}
 
 <button
@@ -1543,6 +1895,15 @@ const deleteProject = async (projectId) => {
   Home
 </button>
 
+              {userId() && (
+                <button
+                  type="button"
+                  className="logout-nav-btn"
+                  onClick={promptLogout}
+                >
+                  Logout
+                </button>
+              )}
 
               {themeButton}
 
@@ -1825,7 +2186,7 @@ const deleteProject = async (projectId) => {
               <button
                 type="button"
                 className="logout-button"
-                onClick={logout}
+                onClick={promptLogout}
               >
                 Logout
               </button>
@@ -2169,6 +2530,31 @@ const deleteProject = async (projectId) => {
 
             </div>
 
+            <div
+              className="feature-card recycle-dashboard-card"
+              onClick={() => {
+                setPage("recycleBin");
+                setRecycleMessage("");
+              }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  setPage("recycleBin");
+                  setRecycleMessage("");
+                }
+              }}
+            >
+              <div className="feature-icon">🗑️</div>
+              <h3>Recycle Bin</h3>
+              <p>
+                {recycleBin.length > 0
+                  ? `${recycleBin.length} deleted item(s) preserved.`
+                  : "View and restore deleted skills & records."}
+              </p>
+              <span className="card-action">Manage bin →</span>
+            </div>
+
           </div>
 
         </main>
@@ -2284,7 +2670,7 @@ const deleteProject = async (projectId) => {
 
               {educationRecords.map((record) => (
 
-                <div className="feature-card" key={record.id}>
+                <div className="feature-card education-card-with-delete" key={record.id}>
 
                   <div className="feature-icon">🎓</div>
 
@@ -2307,6 +2693,18 @@ const deleteProject = async (projectId) => {
                     <strong>Graduation Year:</strong> {record.graduationYear}
 
                   </p>
+
+                  {record.id && (
+                    <button
+                      type="button"
+                      className="delete-skill-btn"
+                      onClick={() => promptDeleteEducation(record)}
+                      title="Remove education record"
+                      aria-label={`Delete education record ${record.degree}`}
+                    >
+                      ✕
+                    </button>
+                  )}
 
                 </div>
 
@@ -2409,7 +2807,7 @@ const deleteProject = async (projectId) => {
                     <button
                       type="button"
                       className="delete-skill-btn"
-                      onClick={() => deleteSkill(item.id)}
+                      onClick={() => promptDeleteSkill(item)}
                       title="Remove skill"
                     >
                       ✕
@@ -3059,7 +3457,7 @@ const deleteProject = async (projectId) => {
                           <button
                             type="button"
                             className="secondary-button delete-card-btn"
-                            onClick={() => deleteProject(project.id)}
+                            onClick={() => promptDeleteProject(project)}
                           >
                             Delete
                           </button>
@@ -3119,13 +3517,25 @@ const deleteProject = async (projectId) => {
               <div className="project-workspace-footer">
                 <span>📁 Project details</span>
 
-                <button
-                  type="button"
-                  className="project-back-button"
-                  onClick={() => setSelectedProject(null)}
-                >
-                  ← Back to Projects
-                </button>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button
+                    type="button"
+                    className="secondary-button delete-card-btn"
+                    onClick={() => {
+                      promptDeleteProject(selectedProject);
+                      setSelectedProject(null);
+                    }}
+                  >
+                    Delete Project
+                  </button>
+                  <button
+                    type="button"
+                    className="project-back-button"
+                    onClick={() => setSelectedProject(null)}
+                  >
+                    ← Back to Projects
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -3239,7 +3649,7 @@ const deleteProject = async (projectId) => {
                     <button
                       type="button"
                       className="delete-skill-btn"
-                      onClick={() => deleteCertification(cert.id)}
+                      onClick={() => promptDeleteCertification(cert)}
                       title="Remove certification"
                     >
                       ✕
@@ -3266,6 +3676,300 @@ const deleteProject = async (projectId) => {
           >
             Back to Dashboard
           </button>
+        </section>
+      )}
+
+      {/* RECYCLE BIN */}
+      {page === "recycleBin" && (
+        <section className="dashboard recycle-bin-page">
+          <div className="dashboard-header">
+            <div>
+              <p className="dashboard-sub">DELETION & RECOVERY VAULT</p>
+              <h1>🗑️ Recycle Bin</h1>
+              <p>
+                Safely manage, filter, and restore accidentally deleted skills,
+                projects, certifications, and educational records.
+              </p>
+            </div>
+
+            <div className="dashboard-header-buttons">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={goToDashboard}
+              >
+                ← Back to Dashboard
+              </button>
+              {recycleBin.length > 0 && (
+                <button
+                  type="button"
+                  className="danger-outline-button"
+                  onClick={promptEmptyBin}
+                  title="Empty all items in the Recycle Bin"
+                >
+                  🗑️ Empty Entire Bin
+                </button>
+              )}
+            </div>
+          </div>
+
+          {recycleMessage && (
+            <div className="recycle-status-banner" role="status">
+              <span>{recycleMessage}</span>
+              <button
+                type="button"
+                className="close-banner-btn"
+                onClick={() => setRecycleMessage("")}
+                aria-label="Dismiss message"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {/* Filter and View Controls */}
+          <div className="recycle-filter-bar">
+            <div className="recycle-search-box">
+              <span className="search-icon">🔍</span>
+              <input
+                type="text"
+                placeholder="Search title, tech stack, organization..."
+                value={recycleSearch}
+                onChange={(e) => setRecycleSearch(e.target.value)}
+                aria-label="Search deleted items"
+              />
+              {recycleSearch && (
+                <button
+                  type="button"
+                  className="clear-search-btn"
+                  onClick={() => setRecycleSearch("")}
+                  aria-label="Clear search"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            <div className="recycle-filters-group">
+              <div className="filter-item">
+                <label htmlFor="recycle-type-select">Type:</label>
+                <select
+                  id="recycle-type-select"
+                  value={recycleTypeFilter}
+                  onChange={(e) => setRecycleTypeFilter(e.target.value)}
+                >
+                  <option value="all">All Types ({recycleBin.length})</option>
+                  <option value="Technical Skill">
+                    Technical Skills (
+                    {recycleBin.filter((i) => i.type === "Technical Skill").length}
+                    )
+                  </option>
+                  <option value="Project">
+                    Projects (
+                    {recycleBin.filter((i) => i.type === "Project").length}
+                    )
+                  </option>
+                  <option value="Certification">
+                    Certifications (
+                    {recycleBin.filter((i) => i.type === "Certification").length}
+                    )
+                  </option>
+                  <option value="Education">
+                    Education (
+                    {recycleBin.filter((i) => i.type === "Education").length}
+                    )
+                  </option>
+                </select>
+              </div>
+
+              <div className="filter-item">
+                <label htmlFor="recycle-date-select">Deleted:</label>
+                <select
+                  id="recycle-date-select"
+                  value={recycleDateFilter}
+                  onChange={(e) => setRecycleDateFilter(e.target.value)}
+                >
+                  <option value="all">All Dates</option>
+                  <option value="today">Today</option>
+                  <option value="week">Past 7 Days</option>
+                  <option value="month">This Month</option>
+                </select>
+              </div>
+
+              <div className="view-mode-toggle" role="group" aria-label="View mode">
+                <button
+                  type="button"
+                  className={`view-toggle-btn ${recycleViewMode === "grid" ? "active" : ""}`}
+                  onClick={() => setRecycleViewMode("grid")}
+                  title="Grid View"
+                >
+                  ⊞ Grid
+                </button>
+                <button
+                  type="button"
+                  className={`view-toggle-btn ${recycleViewMode === "list" ? "active" : ""}`}
+                  onClick={() => setRecycleViewMode("list")}
+                  title="List / Table View"
+                >
+                  ☰ List
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="recycle-summary-bar">
+            <span>
+              Showing <strong>{filteredRecycleItems.length}</strong> of{" "}
+              <strong>{recycleBin.length}</strong> deleted item(s)
+            </span>
+          </div>
+
+          {filteredRecycleItems.length === 0 ? (
+            <div className="recycle-empty-card">
+              <div className="recycle-empty-icon">
+                {recycleBin.length === 0 ? "🎉" : "🔍"}
+              </div>
+              <h3>
+                {recycleBin.length === 0
+                  ? "Recycle Bin is Empty"
+                  : "No Matching Items Found"}
+              </h3>
+              <p>
+                {recycleBin.length === 0
+                  ? "Items deleted from Technical Skills, Projects, Certifications, or Education will appear here and can be restored anytime."
+                  : "Try clearing your search query or switching filters to view other deleted items."}
+              </p>
+              {recycleBin.length > 0 && (
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => {
+                    setRecycleSearch("");
+                    setRecycleTypeFilter("all");
+                    setRecycleDateFilter("all");
+                  }}
+                >
+                  Reset Filters
+                </button>
+              )}
+            </div>
+          ) : recycleViewMode === "grid" ? (
+            <div className="recycle-grid">
+              {filteredRecycleItems.map((item) => (
+                <div className="recycle-card" key={item.binId}>
+                  <div className="recycle-card-header">
+                    <span className={`recycle-type-pill type-${item.type.replace(/\s+/g, "").toLowerCase()}`}>
+                      {item.type === "Technical Skill" && "💻 "}
+                      {item.type === "Project" && "📁 "}
+                      {item.type === "Certification" && "📜 "}
+                      {item.type === "Education" && "🎓 "}
+                      {item.type}
+                    </span>
+                    <span className="recycle-timestamp">
+                      {new Date(item.deletedAt).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+
+                  <h3 className="recycle-card-title">{item.title}</h3>
+                  <p className="recycle-card-details">{item.details}</p>
+
+                  <div className="recycle-card-actions">
+                    <button
+                      type="button"
+                      className="restore-btn"
+                      onClick={() => restoreFromRecycleBin(item)}
+                      title="Restore back to active profile"
+                    >
+                      ↺ Restore
+                    </button>
+                    <button
+                      type="button"
+                      className="perm-delete-btn"
+                      onClick={() => promptPermanentDelete(item)}
+                      title="Delete permanently"
+                    >
+                      ✕ Permanent Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="recycle-table-wrapper">
+              <table className="recycle-table">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Title</th>
+                    <th>Details</th>
+                    <th>Deleted At</th>
+                    <th style={{ textAlign: "right" }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRecycleItems.map((item) => (
+                    <tr key={item.binId}>
+                      <td>
+                        <span className={`recycle-type-pill type-${item.type.replace(/\s+/g, "").toLowerCase()}`}>
+                          {item.type === "Technical Skill" && "💻 "}
+                          {item.type === "Project" && "📁 "}
+                          {item.type === "Certification" && "📜 "}
+                          {item.type === "Education" && "🎓 "}
+                          {item.type}
+                        </span>
+                      </td>
+                      <td className="recycle-table-title">{item.title}</td>
+                      <td className="recycle-table-details">{item.details}</td>
+                      <td className="recycle-table-date">
+                        {new Date(item.deletedAt).toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </td>
+                      <td>
+                        <div className="recycle-row-actions">
+                          <button
+                            type="button"
+                            className="restore-btn-sm"
+                            onClick={() => restoreFromRecycleBin(item)}
+                            title="Restore back to profile"
+                          >
+                            ↺ Restore
+                          </button>
+                          <button
+                            type="button"
+                            className="perm-delete-btn-sm"
+                            onClick={() => promptPermanentDelete(item)}
+                            title="Delete permanently"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div style={{ marginTop: "24px" }}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={goToDashboard}
+            >
+              ← Back to Dashboard
+            </button>
+          </div>
         </section>
       )}
 
@@ -3390,6 +4094,54 @@ const deleteProject = async (projectId) => {
                 {page === "login" ? "Create an account" : "Login"}
               </span>
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Interactive Confirmation Modal */}
+      {confirmModal.isOpen && (
+        <div
+          className="modal-backdrop"
+          onClick={closeConfirmModal}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="confirm-modal-title"
+        >
+          <div
+            className="confirm-modal-box"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className={`confirm-modal-icon ${
+                confirmModal.isDanger ? "danger-icon" : "warning-icon"
+              }`}
+            >
+              {confirmModal.isDanger ? "🗑️" : "🚪"}
+            </div>
+            <h2 id="confirm-modal-title" className="confirm-modal-title">
+              {confirmModal.title}
+            </h2>
+            <p className="confirm-modal-message">{confirmModal.message}</p>
+            <div className="confirm-modal-actions">
+              <button
+                type="button"
+                className="secondary-button modal-cancel-btn"
+                onClick={closeConfirmModal}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={`login-button ${
+                  confirmModal.isDanger
+                    ? "danger-confirm-btn"
+                    : "warning-confirm-btn"
+                }`}
+                onClick={handleExecuteConfirm}
+              >
+                {confirmModal.confirmText}
+              </button>
+            </div>
           </div>
         </div>
       )}
