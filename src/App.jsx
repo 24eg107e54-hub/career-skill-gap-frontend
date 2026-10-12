@@ -24,30 +24,71 @@ const CAREER_PROFILES = {
   "Data Analyst": ["Python", "SQL", "Excel", "Power BI", "Pandas"]
 };
 
-
+// Student Avatar matching the portal reference design
+function StudentAvatar({ size = 36, className = "" }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      className={`student-avatar-svg ${className}`}
+      style={{ borderRadius: "50%", flexShrink: 0, display: "block" }}
+      aria-hidden="true"
+    >
+      <circle cx="50" cy="50" r="50" fill="#fed7aa" />
+      {/* Shirt */}
+      <path d="M 18 100 C 18 76, 32 68, 50 68 C 68 68, 82 76, 82 100 Z" fill="#991b1b" />
+      {/* Shirt Collar V-shape */}
+      <polygon points="50,86 41,68 59,68" fill="#fef3c7" />
+      {/* Neck */}
+      <rect x="43" y="58" width="14" height="15" fill="#fed7aa" rx="2" />
+      {/* Head */}
+      <ellipse cx="50" cy="44" rx="20" ry="22" fill="#fbcfe8" />
+      {/* Hair */}
+      <path d="M 30 40 C 30 23, 40 18, 50 18 C 60 18, 70 23, 70 40 C 70 32, 65 26, 50 26 C 35 26, 30 32, 30 40 Z" fill="#9a3412" />
+      {/* Beard & Hair sides */}
+      <path d="M 31 43 C 31 59, 39 67, 50 67 C 61 67, 69 59, 69 43 C 67 56, 59 62, 50 62 C 41 62, 33 56, 31 43 Z" fill="#9a3412" />
+      {/* Eyes */}
+      <circle cx="43" cy="42" r="2.3" fill="#1e293b" />
+      <circle cx="57" cy="42" r="2.3" fill="#1e293b" />
+      {/* Eyebrows */}
+      <path d="M 40 37 Q 43 35 46 37" stroke="#78350f" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+      <path d="M 54 37 Q 57 35 60 37" stroke="#78350f" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+      {/* Smile */}
+      <path d="M 45 52 Q 50 56 55 52" stroke="#78350f" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 function App() {
 
   // Theme
-
   const [theme, setTheme] = useState(
-
     () => localStorage.getItem("theme") || "light"
-
   );
 
-
+  // Student Profile state
+  const [studentId, setStudentId] = useState(
+    () => localStorage.getItem("studentId") || "24eg107e54"
+  );
+  const [currentUserName, setCurrentUserName] = useState(
+    () => localStorage.getItem("userName") || "Bhanu"
+  );
+  const [currentUserEmail, setCurrentUserEmail] = useState(
+    () => localStorage.getItem("userEmail") || "24eg107e54@anurag.edu.in"
+  );
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [editStudentIdInput, setEditStudentIdInput] = useState("");
+  const [editUserNameInput, setEditUserNameInput] = useState("");
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   // Navigation and authentication
-
   const [page, setPage] = useState("home");
-
   const [name, setName] = useState("");
-
   const [email, setEmail] = useState("");
-
   const [password, setPassword] = useState("");
-
   const [message, setMessage] = useState("");
 
 
@@ -517,8 +558,6 @@ const handleEnterToNext = (event) => {
 
   const userId = () => localStorage.getItem("userId");
 
-
-
   const goToDashboard = () => {
     setMessage("");
     setPage("dashboard");
@@ -540,6 +579,92 @@ const handleEnterToNext = (event) => {
       }
     }
   }, []);
+
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        profileDropdownOpen &&
+        !e.target.closest(".profile-dropdown-container")
+      ) {
+        setProfileDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [profileDropdownOpen]);
+
+  // Unified navigation handlers for Navbar, Dropdown, and Sidebar
+  const handleNavHome = () => {
+    setProfileDropdownOpen(false);
+    setSidebarOpen(false);
+    setPage("home");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleNavFeatures = () => {
+    setProfileDropdownOpen(false);
+    setSidebarOpen(false);
+    if (page !== "home") {
+      setPage("home");
+      setTimeout(() => {
+        document.getElementById("features")?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    } else {
+      document.getElementById("features")?.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  const handleNavAbout = () => {
+    setProfileDropdownOpen(false);
+    setSidebarOpen(false);
+    if (page !== "home") {
+      setPage("home");
+      setTimeout(() => {
+        document.getElementById("about")?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    } else {
+      document.getElementById("about")?.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  const handleNavDashboard = () => {
+    setProfileDropdownOpen(false);
+    setSidebarOpen(false);
+    goToDashboard();
+  };
+
+  const handleNavRecycleBin = () => {
+    setProfileDropdownOpen(false);
+    setSidebarOpen(false);
+    setPage("recycleBin");
+    setRecycleMessage("");
+  };
+
+  const handleOpenProfileModal = () => {
+    setProfileDropdownOpen(false);
+    setSidebarOpen(false);
+    setEditStudentIdInput(studentId);
+    setEditUserNameInput(currentUserName);
+    setIsEditingProfile(false);
+    setProfileModalOpen(true);
+  };
+
+  const handleSaveProfile = () => {
+    const sId = editStudentIdInput.trim() || studentId || "24eg107e54";
+    const uName = editUserNameInput.trim() || currentUserName || "Bhanu";
+    setStudentId(sId);
+    setCurrentUserName(uName);
+    localStorage.setItem("studentId", sId);
+    localStorage.setItem("userName", uName);
+    setIsEditingProfile(false);
+  };
+
+  const handleLogoutAction = () => {
+    setProfileDropdownOpen(false);
+    setSidebarOpen(false);
+    promptLogout();
+  };
 
 
 
@@ -590,6 +715,13 @@ const handleEnterToNext = (event) => {
 
       if (res.ok) {
         setMessage("Registration successful! You can now log in.");
+        localStorage.setItem("userName", trimmedName);
+        localStorage.setItem("userEmail", trimmedEmail);
+        const sId = localStorage.getItem("studentId") || "24eg107e54";
+        localStorage.setItem("studentId", sId);
+        setCurrentUserName(trimmedName);
+        setCurrentUserEmail(trimmedEmail);
+        setStudentId(sId);
         setName("");
         setPassword("");
         setPage("login");
@@ -656,6 +788,16 @@ const handleEnterToNext = (event) => {
         }
 
         localStorage.setItem("userId", String(data.id));
+
+        const uName = data.name || trimmedEmail.split("@")[0] || "Student";
+        const uEmail = data.email || trimmedEmail;
+        const sId = localStorage.getItem("studentId") || "24eg107e54";
+        localStorage.setItem("userName", uName);
+        localStorage.setItem("userEmail", uEmail);
+        localStorage.setItem("studentId", sId);
+        setCurrentUserName(uName);
+        setCurrentUserEmail(uEmail);
+        setStudentId(sId);
 
         try {
           const userBin = JSON.parse(localStorage.getItem(`recycle_bin_${data.id}`)) || [];
@@ -1638,35 +1780,23 @@ const deleteProject = async (projectId) => {
 
 
   // Logout
-
   const logout = () => {
-
     localStorage.removeItem("userId");
-
     setSkillGaps([]);
-
     setProgressData([]);
-
     setCertifications([]);
-
     setEducationRecords([]);
-
     setMessage("");
-
     setCareerMessage("");
-
     setEducationMessage("");
-
     setSkillMessage("");
-
     setProjectMessage("");
-
     setCertificationMessage("");
-
     setRecycleBin([]);
-
+    setProfileDropdownOpen(false);
+    setProfileModalOpen(false);
+    setSidebarOpen(false);
     setPage("home");
-
   };
 
 
@@ -1742,155 +1872,324 @@ const deleteProject = async (projectId) => {
     <div className="app" data-theme={theme}>
 
       {/* Navigation */}
-
       <nav className="navbar">
+        <div className="navbar-left">
+          <button
+            type="button"
+            className="hamburger-btn"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Toggle navigation menu"
+            title="Open Menu"
+          >
+            <span>☰</span>
+          </button>
 
-        <div
-
-          className="logo"
-
-          onClick={() => setPage("home")}
-
-          onKeyDown={(e) => {
-
-            if (e.key === "Enter" || e.key === " ") {
-
-              e.preventDefault();
-
-              setPage("home");
-
-            }
-
-          }}
-
-          role="button"
-
-          tabIndex={0}
-
-          aria-label="Go to home page"
-
-        >
-
-          <span>✦</span> Career Skill Gap Analyzer
-
+          <div
+            className="logo"
+            onClick={handleNavHome}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                handleNavHome();
+              }
+            }}
+            aria-label="Go to home page"
+          >
+            <span>✦</span> Career Skill Gap Analyzer
+          </div>
+          <span className="institution-pill">ANURAG UNIVERSITY</span>
         </div>
-
-
 
         <div className="nav-links">
+          <button
+            type="button"
+            className={`nav-link-btn ${page === "home" ? "active" : ""}`}
+            onClick={handleNavHome}
+          >
+            Home
+          </button>
+          <button
+            type="button"
+            className="nav-link-btn"
+            onClick={handleNavFeatures}
+          >
+            Features
+          </button>
+          <button
+            type="button"
+            className="nav-link-btn"
+            onClick={handleNavAbout}
+          >
+            About
+          </button>
 
-          {page === "home" ? (
-
+          {userId() && (
             <>
-
-              <a href="#home">Home</a>
-
-              <a href="#features">Features</a>
-
-              <a href="#about">About</a>
-
-{userId() ? (
-  <>
-    <button
-      type="button"
-      onClick={goToDashboard}
-    >
-      Dashboard
-    </button>
-    <button
-      type="button"
-      className="recycle-nav-btn"
-      onClick={() => {
-        setPage("recycleBin");
-        setRecycleMessage("");
-      }}
-      title="Open Recycle Bin"
-    >
-      🗑️ Bin {recycleBin.length > 0 && <span className="recycle-nav-badge">{recycleBin.length}</span>}
-    </button>
-    <button
-      type="button"
-      onClick={promptLogout}
-    >
-      Logout
-    </button>
-  </>
-) : (
-  <button
-    type="button"
-    onClick={() => {
-      setPage("login");
-      setMessage("");
-    }}
-  >
-    Login
-  </button>
-)}
-{themeButton}
-
-
+              <button
+                type="button"
+                className={`nav-link-btn ${page === "dashboard" ? "active" : ""}`}
+                onClick={handleNavDashboard}
+              >
+                Dashboard
+              </button>
+              <button
+                type="button"
+                className={`nav-link-btn recycle-nav-btn ${page === "recycleBin" ? "active" : ""}`}
+                onClick={handleNavRecycleBin}
+                title="Open Recycle Bin"
+              >
+                🗑️ Bin {recycleBin.length > 0 && <span className="recycle-nav-badge">{recycleBin.length}</span>}
+              </button>
             </>
-
-          ) : (
-
-            <>
-
-              {userId() && (
-                <>
-                  {page !== "dashboard" && (
-                    <button
-                      type="button"
-                      className="secondary-button nav-cta-button"
-                      onClick={goToDashboard}
-                    >
-                      Dashboard
-                    </button>
-                  )}
-                  {page !== "recycleBin" && (
-                    <button
-                      type="button"
-                      className="secondary-button recycle-nav-btn"
-                      onClick={() => {
-                        setPage("recycleBin");
-                        setRecycleMessage("");
-                      }}
-                      title="Open Recycle Bin"
-                    >
-                      🗑️ Bin {recycleBin.length > 0 && <span className="recycle-nav-badge">{recycleBin.length}</span>}
-                    </button>
-                  )}
-                </>
-              )}
-
-<button
-  type="button"
-  onClick={() => {
-    setPage("home");
-    setMessage("");
-  }}
->
-  Home
-</button>
-
-              {userId() && (
-                <button
-                  type="button"
-                  className="logout-nav-btn"
-                  onClick={promptLogout}
-                >
-                  Logout
-                </button>
-              )}
-
-              {themeButton}
-
-            </>
-
           )}
 
-        </div>
+          {themeButton}
 
+          {userId() ? (
+            <div className="profile-dropdown-container">
+              <button
+                type="button"
+                className="nav-profile-btn"
+                onClick={() => setProfileDropdownOpen((prev) => !prev)}
+                title="Account Menu"
+                aria-expanded={profileDropdownOpen}
+              >
+                <StudentAvatar size={34} />
+                <span className="nav-profile-roll">{studentId || "24eg107e54"}</span>
+                <span className="nav-profile-chevron">{profileDropdownOpen ? "▴" : "▾"}</span>
+              </button>
+
+              {profileDropdownOpen && (
+                <div className="profile-dropdown-card" onClick={(e) => e.stopPropagation()}>
+                  <div
+                    className="profile-dropdown-header"
+                    onClick={handleOpenProfileModal}
+                    title="Click to view full profile"
+                  >
+                    <StudentAvatar size={46} />
+                    <div className="profile-dropdown-user-info">
+                      <div className="profile-dropdown-id">{studentId || "24eg107e54"}</div>
+                      <div className="profile-dropdown-name">{currentUserName || "Student"}</div>
+                      <div className="profile-dropdown-email">{currentUserEmail || "student@anurag.edu.in"}</div>
+                    </div>
+                  </div>
+
+                  <div className="profile-dropdown-divider" />
+
+                  <div className="profile-dropdown-menu">
+                    <button
+                      type="button"
+                      className="profile-dropdown-item"
+                      onClick={handleOpenProfileModal}
+                    >
+                      <span className="profile-item-icon">👤</span>
+                      <span className="profile-item-label">My Profile</span>
+                      <span className="profile-item-hint">View details</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="profile-dropdown-item"
+                      onClick={handleNavHome}
+                    >
+                      <span className="profile-item-icon">🏠</span>
+                      <span className="profile-item-label">Home</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="profile-dropdown-item"
+                      onClick={handleNavFeatures}
+                    >
+                      <span className="profile-item-icon">⚡</span>
+                      <span className="profile-item-label">Features</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="profile-dropdown-item"
+                      onClick={handleNavAbout}
+                    >
+                      <span className="profile-item-icon">ℹ️</span>
+                      <span className="profile-item-label">About</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="profile-dropdown-item"
+                      onClick={handleNavDashboard}
+                    >
+                      <span className="profile-item-icon">📊</span>
+                      <span className="profile-item-label">Dashboard</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="profile-dropdown-item"
+                      onClick={handleNavRecycleBin}
+                    >
+                      <span className="profile-item-icon">🗑️</span>
+                      <span className="profile-item-label">Bin</span>
+                      {recycleBin.length > 0 && (
+                        <span className="profile-item-badge">{recycleBin.length}</span>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="profile-dropdown-item"
+                      onClick={toggleTheme}
+                    >
+                      <span className="profile-item-icon">{theme === "light" ? "🌙" : "☀️"}</span>
+                      <span className="profile-item-label">Theme: {theme === "light" ? "Light" : "Dark"}</span>
+                      <span className="profile-item-hint">Toggle</span>
+                    </button>
+                  </div>
+
+                  <div className="profile-dropdown-divider" />
+
+                  <div className="profile-dropdown-footer">
+                    <button
+                      type="button"
+                      className="profile-dropdown-signout"
+                      onClick={handleLogoutAction}
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="login-button"
+              onClick={() => {
+                setPage("login");
+                setMessage("");
+              }}
+            >
+              Login
+            </button>
+          )}
+        </div>
       </nav>
+
+      {/* Slide-out Sidebar Drawer (Mobile & Desktop) */}
+      {sidebarOpen && (
+        <div className="sidebar-drawer-overlay" onClick={() => setSidebarOpen(false)}>
+          <div className="sidebar-drawer" onClick={(e) => e.stopPropagation()}>
+            <div className="sidebar-header">
+              <div className="sidebar-brand">
+                <div className="sidebar-univ">🏛️ ANURAG UNIVERSITY</div>
+                <div className="sidebar-app">Career Skill Gap Analyzer</div>
+              </div>
+              <button
+                type="button"
+                className="sidebar-close-btn"
+                onClick={() => setSidebarOpen(false)}
+                title="Close menu"
+              >
+                ✕
+              </button>
+            </div>
+
+            {userId() && (
+              <div className="sidebar-user-card" onClick={handleOpenProfileModal}>
+                <StudentAvatar size={50} />
+                <div className="sidebar-user-meta">
+                  <div className="sidebar-user-id">{studentId || "24eg107e54"}</div>
+                  <div className="sidebar-user-name">{currentUserName || "Student"}</div>
+                  <div className="sidebar-user-tag">Student • Computer Science</div>
+                </div>
+              </div>
+            )}
+
+            <div className="sidebar-section-title">NAVIGATION MENU</div>
+            <div className="sidebar-nav-list">
+              <button
+                type="button"
+                className={`sidebar-nav-item ${page === "home" ? "active" : ""}`}
+                onClick={handleNavHome}
+              >
+                <span>🏠</span> Home
+              </button>
+              <button
+                type="button"
+                className="sidebar-nav-item"
+                onClick={handleNavFeatures}
+              >
+                <span>⚡</span> Features
+              </button>
+              <button
+                type="button"
+                className="sidebar-nav-item"
+                onClick={handleNavAbout}
+              >
+                <span>ℹ️</span> About
+              </button>
+              {userId() ? (
+                <>
+                  <button
+                    type="button"
+                    className={`sidebar-nav-item ${page === "dashboard" ? "active" : ""}`}
+                    onClick={handleNavDashboard}
+                  >
+                    <span>📊</span> Dashboard
+                  </button>
+                  <button
+                    type="button"
+                    className={`sidebar-nav-item ${page === "recycleBin" ? "active" : ""}`}
+                    onClick={handleNavRecycleBin}
+                  >
+                    <span>🗑️</span> Bin {recycleBin.length > 0 && <span className="sidebar-badge">{recycleBin.length}</span>}
+                  </button>
+                  <button
+                    type="button"
+                    className="sidebar-nav-item"
+                    onClick={handleOpenProfileModal}
+                  >
+                    <span>👤</span> My Profile
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="sidebar-nav-item"
+                  onClick={() => {
+                    setPage("login");
+                    setMessage("");
+                    setSidebarOpen(false);
+                  }}
+                >
+                  <span>🔐</span> Login / Register
+                </button>
+              )}
+              <button
+                type="button"
+                className="sidebar-nav-item"
+                onClick={toggleTheme}
+              >
+                <span>{theme === "light" ? "🌙" : "☀️"}</span> Theme: {theme === "light" ? "Light" : "Dark"}
+              </button>
+            </div>
+
+            {userId() && (
+              <div className="sidebar-footer">
+                <button
+                  type="button"
+                  className="sidebar-logout-btn"
+                  onClick={handleLogoutAction}
+                >
+                  <span>🚪</span> Logout
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
 
 
@@ -4393,6 +4692,188 @@ const deleteProject = async (projectId) => {
                 onClick={handleExecuteConfirm}
               >
                 {confirmModal.confirmText}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Student Profile Modal */}
+      {profileModalOpen && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setProfileModalOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="profile-modal-title"
+        >
+          <div
+            className="profile-modal-box"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="profile-modal-header-banner">
+              <span className="profile-modal-univ-tag">🏛️ ANURAG UNIVERSITY</span>
+              <button
+                type="button"
+                className="profile-modal-close"
+                onClick={() => setProfileModalOpen(false)}
+                title="Close Profile"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="profile-modal-user-header">
+              <div className="profile-modal-avatar-wrapper">
+                <StudentAvatar size={74} />
+              </div>
+              <div className="profile-modal-user-titles">
+                <h2 id="profile-modal-title" className="profile-modal-name">
+                  {currentUserName || "Student"}
+                </h2>
+                <div className="profile-modal-id-badge">
+                  ROLL NO: <strong>{studentId || "24eg107e54"}</strong>
+                </div>
+                <div className="profile-modal-email-text">
+                  {currentUserEmail || "student@anurag.edu.in"}
+                </div>
+              </div>
+            </div>
+
+            {/* Profile info cards */}
+            <div className="profile-modal-card">
+              <div className="profile-card-header">
+                <span className="profile-card-title">Student Information</span>
+                {!isEditingProfile ? (
+                  <button
+                    type="button"
+                    className="profile-edit-toggle-btn"
+                    onClick={() => {
+                      setEditStudentIdInput(studentId);
+                      setEditUserNameInput(currentUserName);
+                      setIsEditingProfile(true);
+                    }}
+                  >
+                    ✏️ Edit
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="profile-edit-toggle-btn save-btn"
+                    onClick={handleSaveProfile}
+                  >
+                    💾 Save
+                  </button>
+                )}
+              </div>
+
+              {isEditingProfile ? (
+                <div className="profile-edit-form">
+                  <div className="profile-field-group">
+                    <label>Student Roll Number</label>
+                    <input
+                      type="text"
+                      value={editStudentIdInput}
+                      onChange={(e) => setEditStudentIdInput(e.target.value)}
+                      placeholder="e.g. 24eg107e54"
+                    />
+                  </div>
+                  <div className="profile-field-group">
+                    <label>Student Full Name</label>
+                    <input
+                      type="text"
+                      value={editUserNameInput}
+                      onChange={(e) => setEditUserNameInput(e.target.value)}
+                      placeholder="e.g. Bhanu"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="profile-info-grid">
+                  <div className="profile-info-item">
+                    <span className="profile-info-label">Roll Number:</span>
+                    <span className="profile-info-val bold-val">{studentId || "24eg107e54"}</span>
+                  </div>
+                  <div className="profile-info-item">
+                    <span className="profile-info-label">Full Name:</span>
+                    <span className="profile-info-val">{currentUserName || "Student"}</span>
+                  </div>
+                  <div className="profile-info-item">
+                    <span className="profile-info-label">Institution:</span>
+                    <span className="profile-info-val">Anurag University</span>
+                  </div>
+                  <div className="profile-info-item">
+                    <span className="profile-info-label">Target Career:</span>
+                    <span className="profile-info-val career-val">
+                      {careerName || localStorage.getItem("targetCareer") || "Not selected"}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Academic & Skill Inventory Stats */}
+            <div className="profile-modal-card">
+              <div className="profile-card-header">
+                <span className="profile-card-title">Academic & Skill Inventory</span>
+              </div>
+              <div className="profile-stats-grid">
+                <div className="profile-stat-tile">
+                  <span className="profile-tile-emoji">💻</span>
+                  <span className="profile-tile-num">{savedSkills.length}</span>
+                  <span className="profile-tile-label">Skills Added</span>
+                </div>
+                <div className="profile-stat-tile">
+                  <span className="profile-tile-emoji">🚀</span>
+                  <span className="profile-tile-num">{savedProjects.length}</span>
+                  <span className="profile-tile-label">Projects</span>
+                </div>
+                <div className="profile-stat-tile">
+                  <span className="profile-tile-emoji">🎓</span>
+                  <span className="profile-tile-num">{educationRecords.length}</span>
+                  <span className="profile-tile-label">Education</span>
+                </div>
+                <div className="profile-stat-tile">
+                  <span className="profile-tile-emoji">🏆</span>
+                  <span className="profile-tile-num">{certifications.length}</span>
+                  <span className="profile-tile-label">Certificates</span>
+                </div>
+                <div className="profile-stat-tile">
+                  <span className="profile-tile-emoji">🗑️</span>
+                  <span className="profile-tile-num">{recycleBin.length}</span>
+                  <span className="profile-tile-label">Bin Items</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions Footer */}
+            <div className="profile-modal-footer">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => {
+                  setProfileModalOpen(false);
+                  goToDashboard();
+                }}
+              >
+                📊 Dashboard
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => {
+                  setProfileModalOpen(false);
+                  setPage("recycleBin");
+                }}
+              >
+                🗑️ Recycle Bin ({recycleBin.length})
+              </button>
+              <button
+                type="button"
+                className="login-button"
+                onClick={() => setProfileModalOpen(false)}
+              >
+                Done
               </button>
             </div>
           </div>
