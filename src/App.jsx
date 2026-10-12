@@ -135,6 +135,12 @@ const [selectedProject, setSelectedProject] = useState(null);
 
   const [certificationsLoading, setCertificationsLoading] = useState(false);
 
+  // View Mode states (Grid vs List) for all features
+  const [educationViewMode, setEducationViewMode] = useState("grid");
+  const [skillsViewMode, setSkillsViewMode] = useState("grid");
+  const [projectsViewMode, setProjectsViewMode] = useState("grid");
+  const [certificationsViewMode, setCertificationsViewMode] = useState("grid");
+
   // Confirmation Modal state
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -538,132 +544,116 @@ const handleEnterToNext = (event) => {
 
 
   // Register
-
   const register = async () => {
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
 
-    if (!name.trim() || !email.trim() || !password) {
-
-      setMessage("Please fill all fields.");
-
+    if (!trimmedName || !trimmedEmail || !password) {
+      setMessage("INVALID CREDENTIALS OR NO PROPER DETAILS: Please fill all fields.");
       return;
-
     }
 
+    if (trimmedName.length < 2) {
+      setMessage("INVALID CREDENTIALS OR NO PROPER DETAILS: Name must contain at least 2 characters.");
+      return;
+    }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      setMessage("INVALID CREDENTIALS OR NO PROPER DETAILS: Please provide a valid email address (e.g. name@example.com).");
+      return;
+    }
+
+    if (password.length < 4) {
+      setMessage("INVALID CREDENTIALS OR NO PROPER DETAILS: Password must be at least 4 characters long.");
+      return;
+    }
 
     try {
-
       const res = await fetch(`${API}/api/auth/register`, {
-
         method: "POST",
-
         headers: { "Content-Type": "application/json" },
-
         body: JSON.stringify({
-
-          name: name.trim(),
-
-          email: email.trim(),
-
+          name: trimmedName,
+          email: trimmedEmail,
           password,
-
         }),
-
       });
-
-
-
-      const data = await res.text();
-
-
-
-      if (res.ok) {
-
-        setMessage("Registration successful! You can now log in.");
-
-        setName("");
-
-        setPassword("");
-
-        setPage("login");
-
-      } else {
-
-        setMessage(data || "Registration failed.");
-
-      }
-
-    } catch {
-
-      setMessage("Unable to connect to the backend.");
-
-    }
-
-  };
-
-
-
-  // Login
-
-  const login = async () => {
-
-    if (!email.trim() || !password) {
-
-      setMessage("Please enter your email and password.");
-
-      return;
-
-    }
-
-
-
-    try {
-
-      const res = await fetch(`${API}/api/auth/login`, {
-
-        method: "POST",
-
-        headers: { "Content-Type": "application/json" },
-
-        body: JSON.stringify({
-
-          email: email.trim(),
-
-          password,
-
-        }),
-
-      });
-
-
 
       const rawText = await res.text();
-
       let data = {};
-
       try {
-
         data = JSON.parse(rawText);
-
       } catch {
-
         data = rawText;
-
       }
 
+      if (res.ok) {
+        setMessage("Registration successful! You can now log in.");
+        setName("");
+        setPassword("");
+        setPage("login");
+      } else {
+        // Parse error message cleanly - NEVER show raw JSON like {"timestamp":... "status":500 ...}
+        if (typeof data === "object" && data !== null) {
+          if (data.message && typeof data.message === "string" && !data.message.includes("Internal Server Error")) {
+            if (data.message.toLowerCase().includes("already registered")) {
+              setMessage("This email is already registered. Please log in or use another email.");
+            } else {
+              setMessage(data.message);
+            }
+          } else {
+            setMessage("INVALID CREDENTIALS OR NO PROPER DETAILS: Please check your input and try again.");
+          }
+        } else if (typeof data === "string" && (data.includes("timestamp") || data.includes("500") || data.includes("Internal Server Error") || data.startsWith("{"))) {
+          setMessage("INVALID CREDENTIALS OR NO PROPER DETAILS: Please verify your information and try again.");
+        } else {
+          setMessage("INVALID CREDENTIALS OR NO PROPER DETAILS: " + (data || "Registration failed."));
+        }
+      }
+    } catch {
+      setMessage("Unable to connect to the backend server. Please verify your connection.");
+    }
+  };
 
+  // Login
+  const login = async () => {
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail || !password) {
+      setMessage("INVALID CREDENTIALS OR NO PROPER DETAILS: Please enter your email and password.");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      setMessage("INVALID CREDENTIALS OR NO PROPER DETAILS: Please enter a valid registered email address.");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: trimmedEmail,
+          password,
+        }),
+      });
+
+      const rawText = await res.text();
+      let data = {};
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        data = rawText;
+      }
 
       if (res.ok) {
-
         if (data.id == null) {
-
           setMessage("Login succeeded, but the user ID was not returned.");
-
           return;
-
         }
-
-
 
         localStorage.setItem("userId", String(data.id));
 
@@ -675,33 +665,20 @@ const handleEnterToNext = (event) => {
         }
 
         setCareerName(localStorage.getItem("targetCareer") || "");
-
         setMessage("");
-
         setPassword("");
-
         setPage("dashboard");
-
       } else {
-
-        setMessage(
-
-          typeof data === "string"
-
-            ? data
-
-            : data.message || "Invalid email or password."
-
-        );
-
+        // If account does not exist or credentials incorrect
+        if (typeof data === "object" && data !== null && (data.status === 500 || data.error === "Internal Server Error")) {
+          setMessage("INVALID CREDENTIALS OR NO PROPER DETAILS: Account not found. Please register or create an account to login.");
+        } else {
+          setMessage("Account not found or invalid credentials. Please create an account or register to login.");
+        }
       }
-
     } catch {
-
-      setMessage("Unable to connect to the backend.");
-
+      setMessage("Unable to connect to the backend server. Please try again later.");
     }
-
   };
 
 
@@ -2634,94 +2611,122 @@ const deleteProject = async (projectId) => {
 
 
 
-          <div className="dashboard-section-heading">
+          <div className="section-toolbar">
+            <div className="section-toolbar-left">
+              <h2>Your Saved Education</h2>
+              <span className="section-count-badge">
+                {educationRecords.length} record(s)
+              </span>
+            </div>
 
-            <h2>Your Saved Education</h2>
+            <div className="section-toolbar-right">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={loadEducation}
+              >
+                {educationLoading ? "Refreshing..." : "↻ Refresh"}
+              </button>
 
-            <p>{educationRecords.length} education record(s)</p>
-
+              <div className="view-mode-toggle" role="group" aria-label="View mode">
+                <button
+                  type="button"
+                  className={`view-toggle-btn ${educationViewMode === "grid" ? "active" : ""}`}
+                  onClick={() => setEducationViewMode("grid")}
+                  title="Grid View"
+                >
+                  ⊞ Grid
+                </button>
+                <button
+                  type="button"
+                  className={`view-toggle-btn ${educationViewMode === "list" ? "active" : ""}`}
+                  onClick={() => setEducationViewMode("list")}
+                  title="List View"
+                >
+                  ☰ List
+                </button>
+              </div>
+            </div>
           </div>
 
-
-
-          <button
-
-            type="button"
-
-            className="secondary-button"
-
-            onClick={loadEducation}
-
-          >
-
-            Refresh Education
-
-          </button>
-
-
-
           {educationLoading ? (
-
             <p>Loading education records...</p>
-
           ) : educationRecords.length > 0 ? (
-
-            <div className="feature-grid">
-
-              {educationRecords.map((record) => (
-
-                <div className="feature-card education-card-with-delete" key={record.id}>
-
-                  <div className="feature-icon">🎓</div>
-
-                  <h3>{record.degree}</h3>
-
-                  <p>
-
-                    <strong>College:</strong> {record.college}
-
-                  </p>
-
-                  <p>
-
-                    <strong>Specialization:</strong> {record.specialization}
-
-                  </p>
-
-                  <p>
-
-                    <strong>Graduation Year:</strong> {record.graduationYear}
-
-                  </p>
-
-                  {record.id && (
-                    <button
-                      type="button"
-                      className="delete-skill-btn"
-                      onClick={() => promptDeleteEducation(record)}
-                      title="Remove education record"
-                      aria-label={`Delete education record ${record.degree}`}
-                    >
-                      ✕
-                    </button>
-                  )}
-
-                </div>
-
-              ))}
-
-            </div>
-
+            educationViewMode === "grid" ? (
+              <div className="feature-grid">
+                {educationRecords.map((record) => (
+                  <div className="feature-card education-card-with-delete" key={record.id}>
+                    <div className="feature-icon">🎓</div>
+                    <h3>{record.degree}</h3>
+                    <p>
+                      <strong>College:</strong> {record.college}
+                    </p>
+                    <p>
+                      <strong>Specialization:</strong> {record.specialization}
+                    </p>
+                    <p>
+                      <strong>Graduation Year:</strong> {record.graduationYear}
+                    </p>
+                    {record.id && (
+                      <button
+                        type="button"
+                        className="delete-skill-btn"
+                        onClick={() => promptDeleteEducation(record)}
+                        title="Remove education record"
+                        aria-label={`Delete education record ${record.degree}`}
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="feature-table-wrapper">
+                <table className="feature-table">
+                  <thead>
+                    <tr>
+                      <th>Degree</th>
+                      <th>College / Institution</th>
+                      <th>Specialization</th>
+                      <th>Graduation Year</th>
+                      <th style={{ textAlign: "right" }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {educationRecords.map((record) => (
+                      <tr key={record.id}>
+                        <td className="table-title-cell">
+                          <span className="table-cell-icon">🎓</span>
+                          <strong>{record.degree}</strong>
+                        </td>
+                        <td>{record.college}</td>
+                        <td>{record.specialization || "—"}</td>
+                        <td>{record.graduationYear}</td>
+                        <td style={{ textAlign: "right" }}>
+                          {record.id && (
+                            <button
+                              type="button"
+                              className="table-delete-btn"
+                              onClick={() => promptDeleteEducation(record)}
+                              title="Delete education record"
+                              aria-label={`Delete ${record.degree}`}
+                            >
+                              ✕ Delete
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
           ) : (
-
             <div className="feature-card">
-
               <h3>No Education Records Found</h3>
-
               <p>Save your education details to see them here.</p>
-
             </div>
-
           )}
 
         </section>
@@ -2778,44 +2783,111 @@ const deleteProject = async (projectId) => {
             </div>
           </div>
 
-          <div className="dashboard-section-heading">
-            <h2>Your Saved Technical Skills</h2>
-            <p>{savedSkills.length} skill(s) saved</p>
-          </div>
+          <div className="section-toolbar">
+            <div className="section-toolbar-left">
+              <h2>Your Saved Technical Skills</h2>
+              <span className="section-count-badge">
+                {savedSkills.length} skill(s) saved
+              </span>
+            </div>
 
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={loadSkills}
-            disabled={skillsLoading}
-          >
-            {skillsLoading ? "Refreshing..." : "Refresh Skills"}
-          </button>
+            <div className="section-toolbar-right">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={loadSkills}
+                disabled={skillsLoading}
+              >
+                {skillsLoading ? "Refreshing..." : "↻ Refresh Skills"}
+              </button>
+
+              <div className="view-mode-toggle" role="group" aria-label="View mode">
+                <button
+                  type="button"
+                  className={`view-toggle-btn ${skillsViewMode === "grid" ? "active" : ""}`}
+                  onClick={() => setSkillsViewMode("grid")}
+                  title="Grid View"
+                >
+                  ⊞ Grid
+                </button>
+                <button
+                  type="button"
+                  className={`view-toggle-btn ${skillsViewMode === "list" ? "active" : ""}`}
+                  onClick={() => setSkillsViewMode("list")}
+                  title="List View"
+                >
+                  ☰ List
+                </button>
+              </div>
+            </div>
+          </div>
 
           {skillsLoading ? (
             <p>Loading technical skills...</p>
           ) : savedSkills.length > 0 ? (
-            <div className="feature-grid">
-              {savedSkills.map((item, index) => (
-                <div
-                  className="feature-card skill-card-with-delete"
-                  key={item.id ?? index}
-                >
-                  <div className="feature-icon">💻</div>
-                  <h3>{item.skill}</h3>
-                  {item.id && (
-                    <button
-                      type="button"
-                      className="delete-skill-btn"
-                      onClick={() => promptDeleteSkill(item)}
-                      title="Remove skill"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
+            skillsViewMode === "grid" ? (
+              <div className="feature-grid">
+                {savedSkills.map((item, index) => (
+                  <div
+                    className="feature-card skill-card-with-delete"
+                    key={item.id ?? index}
+                  >
+                    <div className="feature-icon">💻</div>
+                    <h3>{item.skill}</h3>
+                    {item.id && (
+                      <button
+                        type="button"
+                        className="delete-skill-btn"
+                        onClick={() => promptDeleteSkill(item)}
+                        title="Remove skill"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="feature-table-wrapper">
+                <table className="feature-table">
+                  <thead>
+                    <tr>
+                      <th>Technical Skill</th>
+                      <th>Proficiency / Status</th>
+                      <th style={{ textAlign: "right" }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {savedSkills.map((item, index) => (
+                      <tr key={item.id ?? index}>
+                        <td className="table-title-cell">
+                          <span className="table-cell-icon">💻</span>
+                          <strong>{item.skill}</strong>
+                        </td>
+                        <td>
+                          <span className="table-pill proficiency-pill">
+                            {item.proficiencyLevel || "Proficient"}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: "right" }}>
+                          {item.id && (
+                            <button
+                              type="button"
+                              className="table-delete-btn"
+                              onClick={() => promptDeleteSkill(item)}
+                              title="Delete skill"
+                              aria-label={`Delete ${item.skill}`}
+                            >
+                              ✕ Delete
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
           ) : (
             <div className="feature-card">
               <div className="feature-icon">💻</div>
@@ -3432,47 +3504,135 @@ const deleteProject = async (projectId) => {
                 )}
               </div>
 
-              <h2>Saved Projects</h2>
+              <div className="section-toolbar">
+                <div className="section-toolbar-left">
+                  <h2>Saved Projects</h2>
+                  <span className="section-count-badge">
+                    {savedProjects.length} project(s)
+                  </span>
+                </div>
 
-              <div className="feature-grid">
-                {savedProjects.length > 0 ? (
-                  savedProjects.map((project, index) => (
-                    <div
-                      className="feature-card"
-                      key={project.id ?? index}
+                <div className="section-toolbar-right">
+                  <div className="view-mode-toggle" role="group" aria-label="View mode">
+                    <button
+                      type="button"
+                      className={`view-toggle-btn ${projectsViewMode === "grid" ? "active" : ""}`}
+                      onClick={() => setProjectsViewMode("grid")}
+                      title="Grid View"
                     >
-                      <div className="feature-icon">📁</div>
-                      <h3>{project.projectName}</h3>
-                      <p>{project.description}</p>
+                      ⊞ Grid
+                    </button>
+                    <button
+                      type="button"
+                      className={`view-toggle-btn ${projectsViewMode === "list" ? "active" : ""}`}
+                      onClick={() => setProjectsViewMode("list")}
+                      title="List View"
+                    >
+                      ☰ List
+                    </button>
+                  </div>
+                </div>
+              </div>
 
-                      <div className="project-card-actions">
-                        <button
-                          type="button"
-                          className="login-button"
-                          onClick={() => setSelectedProject(project)}
-                        >
-                          Open
-                        </button>
-                        {project.id && (
+              {savedProjects.length > 0 ? (
+                projectsViewMode === "grid" ? (
+                  <div className="feature-grid">
+                    {savedProjects.map((project, index) => (
+                      <div
+                        className="feature-card"
+                        key={project.id ?? index}
+                      >
+                        <div className="feature-icon">📁</div>
+                        <h3>{project.projectName}</h3>
+                        <p>{project.description}</p>
+
+                        <div className="project-card-actions">
                           <button
                             type="button"
-                            className="secondary-button delete-card-btn"
-                            onClick={() => promptDeleteProject(project)}
+                            className="login-button"
+                            onClick={() => setSelectedProject(project)}
                           >
-                            Delete
+                            Open
                           </button>
-                        )}
+                          {project.id && (
+                            <button
+                              type="button"
+                              className="secondary-button delete-card-btn"
+                              onClick={() => promptDeleteProject(project)}
+                            >
+                              Delete
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="feature-card">
-                    <div className="feature-icon">📁</div>
-                    <h3>No Projects Saved</h3>
-                    <p>Your saved projects will appear here.</p>
+                    ))}
                   </div>
-                )}
-              </div>
+                ) : (
+                  <div className="feature-table-wrapper">
+                    <table className="feature-table">
+                      <thead>
+                        <tr>
+                          <th>Project Title</th>
+                          <th>Technologies</th>
+                          <th>Overview</th>
+                          <th style={{ textAlign: "right" }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {savedProjects.map((project, index) => (
+                          <tr key={project.id ?? index}>
+                            <td className="table-title-cell">
+                              <span className="table-cell-icon">📁</span>
+                              <strong>{project.projectName}</strong>
+                            </td>
+                            <td>
+                              <div className="table-tech-tags">
+                                {(project.technologies || "")
+                                  .split(",")
+                                  .map((t) => t.trim())
+                                  .filter(Boolean)
+                                  .map((t, i) => (
+                                    <span key={i} className="table-pill tech-pill">
+                                      {t}
+                                    </span>
+                                  ))}
+                              </div>
+                            </td>
+                            <td className="table-desc-cell">{project.description}</td>
+                            <td style={{ textAlign: "right" }}>
+                              <div className="table-action-group">
+                                <button
+                                  type="button"
+                                  className="table-open-btn"
+                                  onClick={() => setSelectedProject(project)}
+                                >
+                                  Open
+                                </button>
+                                {project.id && (
+                                  <button
+                                    type="button"
+                                    className="table-delete-btn"
+                                    onClick={() => promptDeleteProject(project)}
+                                    title="Delete project"
+                                  >
+                                    ✕ Delete
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )
+              ) : (
+                <div className="feature-card">
+                  <div className="feature-icon">📁</div>
+                  <h3>No Projects Saved</h3>
+                  <p>Your saved projects will appear here.</p>
+                </div>
+              )}
             </>
           )}
 
@@ -3622,42 +3782,116 @@ const deleteProject = async (projectId) => {
             </button>
           </div>
 
-          <div className="dashboard-section-heading">
-            <h2>Your Saved Certificates</h2>
-            <p>{certifications.length} certification(s) saved</p>
+          <div className="section-toolbar">
+            <div className="section-toolbar-left">
+              <h2>Your Saved Certificates</h2>
+              <span className="section-count-badge">
+                {certifications.length} certificate(s) saved
+              </span>
+            </div>
+
+            <div className="section-toolbar-right">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={loadCertifications}
+                disabled={certificationsLoading}
+              >
+                {certificationsLoading ? "Refreshing..." : "↻ Refresh"}
+              </button>
+
+              <div className="view-mode-toggle" role="group" aria-label="View mode">
+                <button
+                  type="button"
+                  className={`view-toggle-btn ${certificationsViewMode === "grid" ? "active" : ""}`}
+                  onClick={() => setCertificationsViewMode("grid")}
+                  title="Grid View"
+                >
+                  ⊞ Grid
+                </button>
+                <button
+                  type="button"
+                  className={`view-toggle-btn ${certificationsViewMode === "list" ? "active" : ""}`}
+                  onClick={() => setCertificationsViewMode("list")}
+                  title="List View"
+                >
+                  ☰ List
+                </button>
+              </div>
+            </div>
           </div>
 
           {certificationsLoading ? (
             <p>Loading certifications...</p>
           ) : certifications.length > 0 ? (
-            <div className="feature-grid">
-              {certifications.map((cert, index) => (
-                <div className="feature-card cert-card-with-delete" key={cert.id ?? index}>
-                  <div className="feature-icon">📜</div>
-                  <h3>{cert.certificationName}</h3>
+            certificationsViewMode === "grid" ? (
+              <div className="feature-grid">
+                {certifications.map((cert, index) => (
+                  <div className="feature-card cert-card-with-delete" key={cert.id ?? index}>
+                    <div className="feature-icon">📜</div>
+                    <h3>{cert.certificationName}</h3>
 
-                  <p>
-                    <strong>Issuing Organization:</strong>{" "}
-                    {cert.issuingOrganization}
-                  </p>
+                    <p>
+                      <strong>Issuing Organization:</strong>{" "}
+                      {cert.issuingOrganization}
+                    </p>
 
-                  <p>
-                    <strong>Issue Year:</strong> {cert.issueYear}
-                  </p>
+                    <p>
+                      <strong>Issue Year:</strong> {cert.issueYear}
+                    </p>
 
-                  {cert.id && (
-                    <button
-                      type="button"
-                      className="delete-skill-btn"
-                      onClick={() => promptDeleteCertification(cert)}
-                      title="Remove certification"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
+                    {cert.id && (
+                      <button
+                        type="button"
+                        className="delete-skill-btn"
+                        onClick={() => promptDeleteCertification(cert)}
+                        title="Remove certification"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="feature-table-wrapper">
+                <table className="feature-table">
+                  <thead>
+                    <tr>
+                      <th>Certificate Name</th>
+                      <th>Issuing Organization</th>
+                      <th>Issue Year</th>
+                      <th style={{ textAlign: "right" }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {certifications.map((cert, index) => (
+                      <tr key={cert.id ?? index}>
+                        <td className="table-title-cell">
+                          <span className="table-cell-icon">📜</span>
+                          <strong>{cert.certificationName}</strong>
+                        </td>
+                        <td>{cert.issuingOrganization}</td>
+                        <td>{cert.issueYear}</td>
+                        <td style={{ textAlign: "right" }}>
+                          {cert.id && (
+                            <button
+                              type="button"
+                              className="table-delete-btn"
+                              onClick={() => promptDeleteCertification(cert)}
+                              title="Delete certification"
+                              aria-label={`Delete ${cert.certificationName}`}
+                            >
+                              ✕ Delete
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
           ) : (
             <div className="feature-card">
               <div className="feature-icon">📄</div>
@@ -3682,17 +3916,17 @@ const deleteProject = async (projectId) => {
       {/* RECYCLE BIN */}
       {page === "recycleBin" && (
         <section className="dashboard recycle-bin-page">
-          <div className="dashboard-header">
-            <div>
+          <div className="recycle-page-header">
+            <div className="recycle-header-info">
               <p className="dashboard-sub">DELETION & RECOVERY VAULT</p>
               <h1>🗑️ Recycle Bin</h1>
-              <p>
+              <p className="recycle-header-desc">
                 Safely manage, filter, and restore accidentally deleted skills,
                 projects, certifications, and educational records.
               </p>
             </div>
 
-            <div className="dashboard-header-buttons">
+            <div className="recycle-header-actions">
               <button
                 type="button"
                 className="secondary-button"
@@ -4069,7 +4303,26 @@ const deleteProject = async (projectId) => {
               {page === "login" ? "Login" : "Create Account"}
             </button>
 
-            {message && <p role="alert">{message}</p>}
+            {message && (
+              <div className="auth-alert-box" role="alert">
+                <p className="auth-alert-text">{message}</p>
+                {page === "login" &&
+                  (message.includes("register") ||
+                    message.includes("create an account") ||
+                    message.includes("Account not found")) && (
+                    <button
+                      type="button"
+                      className="inline-register-btn"
+                      onClick={() => {
+                        setPage("register");
+                        setMessage("");
+                      }}
+                    >
+                      ✨ Create Account / Register Here →
+                    </button>
+                  )}
+              </div>
+            )}
 
             <p className="register-text">
               {page === "login"
