@@ -8,7 +8,21 @@ import "./App.css";
 
 
 
-const API = "http://localhost:8080";
+const API = import.meta.env.VITE_API_URL || "https://career-skill-gap-backend.onrender.com";
+
+const POPULAR_SKILLS = [
+  "Java", "Spring Boot", "React", "SQL", "MySQL", "JavaScript",
+  "Python", "HTML", "CSS", "Git", "REST API", "Docker", "Node.js",
+  "Django", "Power BI", "Pandas", "AWS", "Data Structures"
+];
+
+const CAREER_PROFILES = {
+  "Java Developer": ["Java", "Spring Boot", "MySQL", "REST API", "Git"],
+  "Frontend Developer": ["HTML", "CSS", "JavaScript", "React", "Git"],
+  "Full Stack Developer": ["Java", "Spring Boot", "React", "JavaScript", "MySQL"],
+  "Python Developer": ["Python", "Django", "SQL", "Git"],
+  "Data Analyst": ["Python", "SQL", "Excel", "Power BI", "Pandas"]
+};
 
 
 
@@ -190,12 +204,26 @@ const handleEnterToNext = (event) => {
 
 
   const goToDashboard = () => {
-
     setMessage("");
-
     setPage("dashboard");
-
+    if (userId()) {
+      loadSkills();
+      loadAvailableCareers();
+      if (localStorage.getItem("targetCareer")) {
+        loadSkillGaps();
+      }
+    }
   };
+
+  useEffect(() => {
+    if (localStorage.getItem("userId")) {
+      loadSkills();
+      loadAvailableCareers();
+      if (localStorage.getItem("targetCareer")) {
+        loadSkillGaps();
+      }
+    }
+  }, []);
 
 
 
@@ -299,7 +327,19 @@ const handleEnterToNext = (event) => {
 
 
 
-      const data = await res.json();
+      const rawText = await res.text();
+
+      let data = {};
+
+      try {
+
+        data = JSON.parse(rawText);
+
+      } catch {
+
+        data = rawText;
+
+      }
 
 
 
@@ -609,10 +649,58 @@ const handleEnterToNext = (event) => {
       );
 
     }
-
   };
 
+  // Delete technical skill
+  const deleteSkill = async (skillId) => {
+    if (!skillId) return;
+    try {
+      const res = await fetch(`${API}/api/skills/${skillId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete skill.");
+      await loadSkills();
+      if (localStorage.getItem("targetCareer")) {
+        loadSkillGaps();
+      }
+      setSkillMessage("Skill removed successfully!");
+    } catch (error) {
+      setSkillMessage(error.message || "Unable to delete skill.");
+    }
+  };
 
+  // Quick-add popular skill
+  const quickAddSkill = async (skillName) => {
+    if (!skillName || !userId()) {
+      setSkillMessage("Please log in first.");
+      return;
+    }
+    const alreadyExists = savedSkills.some(
+      (s) => (s.skill || "").toLowerCase().trim() === skillName.toLowerCase().trim()
+    );
+    if (alreadyExists) {
+      setSkillMessage(`"${skillName}" is already in your profile!`);
+      return;
+    }
+    try {
+      const res = await fetch(`${API}/api/skills`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          skill: skillName.trim(),
+          userId: Number(userId()),
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to add skill.");
+      await loadSkills();
+      if (localStorage.getItem("targetCareer")) {
+        loadSkillGaps();
+      }
+      setSkillMessage(`"${skillName}" added to profile!`);
+    } catch (error) {
+      setSkillMessage(error.message || "Failed to add skill.");
+    }
+  };
 
   // Load learning progress
 
@@ -927,7 +1015,7 @@ const handleEnterToNext = (event) => {
 // LOAD SAVED PROJECTS
 const loadProjects = async () => {
   try {
-    const res = await fetch("http://localhost:8080/api/projects");
+    const res = await fetch(`${API}/api/projects`);
 
     if (res.ok) {
       const data = await res.json();
@@ -952,7 +1040,7 @@ const saveProject = async () => {
   }
 
   try {
-    const res = await fetch("http://localhost:8080/api/projects", {
+    const res = await fetch(`${API}/api/projects`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -978,6 +1066,24 @@ const saveProject = async () => {
     setProjectMessage(
       error.message || "Backend is not running."
     );
+  }
+};
+
+// Delete project
+const deleteProject = async (projectId) => {
+  if (!projectId) return;
+  try {
+    const res = await fetch(`${API}/api/projects/${projectId}`, {
+      method: "DELETE",
+    });
+    if (!res.ok) throw new Error("Failed to delete project.");
+    if (selectedProject?.id === projectId) {
+      setSelectedProject(null);
+    }
+    await loadProjects();
+    setProjectMessage("Project deleted successfully!");
+  } catch (error) {
+    setProjectMessage(error.message || "Failed to delete project.");
   }
 };
 
@@ -1132,13 +1238,24 @@ const saveProject = async () => {
     } catch (error) {
 
       setCertificationMessage(
-
         error.message || "Backend is not running."
-
       );
-
     }
+  };
 
+  // Delete certification
+  const deleteCertification = async (certId) => {
+    if (!certId) return;
+    try {
+      const res = await fetch(`${API}/api/certifications/${certId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete certification.");
+      await loadCertifications();
+      setCertificationMessage("Certification removed successfully!");
+    } catch (error) {
+      setCertificationMessage(error.message || "Failed to delete certification.");
+    }
   };
 
 
@@ -1697,19 +1814,22 @@ const saveProject = async () => {
 
 
 
-            <button
-
-              type="button"
-
-              className="logout-button"
-
-              onClick={logout}
-
-            >
-
-              Logout
-
-            </button>
+            <div className="dashboard-header-buttons">
+              <button
+                type="button"
+                className="secondary-button export-report-btn"
+                onClick={() => window.print()}
+              >
+                📄 Print / Export Report (PDF)
+              </button>
+              <button
+                type="button"
+                className="logout-button"
+                onClick={logout}
+              >
+                Logout
+              </button>
+            </div>
 
           </div>
 
@@ -1767,6 +1887,67 @@ const saveProject = async () => {
 
             </div>
 
+          </div>
+
+          {/* Career Readiness Comparison Matrix */}
+          <div className="career-comparison-section">
+            <div className="dashboard-section-heading">
+              <div>
+                <h2>🎯 Career Readiness Comparison</h2>
+                <p>See how your current skills match up against top career roles.</p>
+              </div>
+            </div>
+
+            <div className="career-comparison-grid">
+              {Object.entries(CAREER_PROFILES).map(([careerTitle, reqSkills]) => {
+                const userSkillNames = savedSkills.map((s) => (s.skill || "").toLowerCase().trim());
+                const matchedCount = reqSkills.filter((req) => userSkillNames.includes(req.toLowerCase().trim())).length;
+                const matchPct = Math.round((matchedCount / reqSkills.length) * 100);
+                const isSelected = (localStorage.getItem("targetCareer") || "") === careerTitle;
+
+                return (
+                  <div key={careerTitle} className={`career-match-card ${isSelected ? "selected-target" : ""}`}>
+                    <div className="career-match-header">
+                      <h4>
+                        {careerTitle}
+                        {isSelected && <span className="current-target-tag">Active Goal</span>}
+                      </h4>
+                      <span className={`match-badge ${matchPct >= 70 ? "high" : matchPct >= 40 ? "medium" : "low"}`}>
+                        {matchPct}% Match
+                      </span>
+                    </div>
+
+                    <div className="match-progress-bar">
+                      <div className="match-progress-fill" style={{ width: `${matchPct}%` }} />
+                    </div>
+
+                    <p className="match-stats">
+                      {matchedCount} of {reqSkills.length} required skills in your profile
+                    </p>
+
+                    <button
+                      type="button"
+                      className="secondary-button switch-career-btn"
+                      onClick={async () => {
+                        setCareerName(careerTitle);
+                        localStorage.setItem("targetCareer", careerTitle);
+                        try {
+                          await fetch(`${API}/api/careers`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ careerName: careerTitle, userId: Number(userId()) }),
+                          });
+                        } catch (_) {}
+                        await loadSkillGaps();
+                        setPage("skillgap");
+                      }}
+                    >
+                      {isSelected ? "View Skill Gap →" : "Target This Career →"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
 
@@ -2181,6 +2362,24 @@ const saveProject = async () => {
             {skillMessage && <p role="status">{skillMessage}</p>}
           </div>
 
+          <div className="quick-skills-section">
+            <p className="quick-skills-title">⚡ Suggested Skills (Click to add instantly):</p>
+            <div className="quick-skills-pills">
+              {POPULAR_SKILLS.filter(
+                (p) => !savedSkills.some((s) => (s.skill || "").toLowerCase().trim() === p.toLowerCase().trim())
+              ).slice(0, 14).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  className="quick-skill-pill"
+                  onClick={() => quickAddSkill(p)}
+                >
+                  + {p}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="dashboard-section-heading">
             <h2>Your Saved Technical Skills</h2>
             <p>{savedSkills.length} skill(s) saved</p>
@@ -2201,11 +2400,21 @@ const saveProject = async () => {
             <div className="feature-grid">
               {savedSkills.map((item, index) => (
                 <div
-                  className="feature-card"
+                  className="feature-card skill-card-with-delete"
                   key={item.id ?? index}
                 >
                   <div className="feature-icon">💻</div>
                   <h3>{item.skill}</h3>
+                  {item.id && (
+                    <button
+                      type="button"
+                      className="delete-skill-btn"
+                      onClick={() => deleteSkill(item.id)}
+                      title="Remove skill"
+                    >
+                      ✕
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -2365,19 +2574,22 @@ const saveProject = async () => {
 
 
 
-            <button
-
-              type="button"
-
-              className="login-button"
-
-              onClick={loadSkillGaps}
-
-            >
-
-              Refresh Skill Gap Analysis
-
-            </button>
+            <div className="skill-gap-btn-row">
+              <button
+                type="button"
+                className="login-button"
+                onClick={loadSkillGaps}
+              >
+                Refresh Skill Gap Analysis
+              </button>
+              <button
+                type="button"
+                className="secondary-button export-report-btn"
+                onClick={() => window.print()}
+              >
+                📄 Print / Export Report (PDF)
+              </button>
+            </div>
 
 
 
@@ -2586,7 +2798,7 @@ const saveProject = async () => {
           )}
 
           <LearningRecommendations
-
+            apiBase={API}
             missingSkills={skillGaps.filter(
 
               (item) =>
@@ -2835,13 +3047,24 @@ const saveProject = async () => {
                       <h3>{project.projectName}</h3>
                       <p>{project.description}</p>
 
-                      <button
-                        type="button"
-                        className="login-button"
-                        onClick={() => setSelectedProject(project)}
-                      >
-                        Open
-                      </button>
+                      <div className="project-card-actions">
+                        <button
+                          type="button"
+                          className="login-button"
+                          onClick={() => setSelectedProject(project)}
+                        >
+                          Open
+                        </button>
+                        {project.id && (
+                          <button
+                            type="button"
+                            className="secondary-button delete-card-btn"
+                            onClick={() => deleteProject(project.id)}
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))
                 ) : (
@@ -2999,7 +3222,7 @@ const saveProject = async () => {
           ) : certifications.length > 0 ? (
             <div className="feature-grid">
               {certifications.map((cert, index) => (
-                <div className="feature-card" key={cert.id ?? index}>
+                <div className="feature-card cert-card-with-delete" key={cert.id ?? index}>
                   <div className="feature-icon">📜</div>
                   <h3>{cert.certificationName}</h3>
 
@@ -3011,6 +3234,17 @@ const saveProject = async () => {
                   <p>
                     <strong>Issue Year:</strong> {cert.issueYear}
                   </p>
+
+                  {cert.id && (
+                    <button
+                      type="button"
+                      className="delete-skill-btn"
+                      onClick={() => deleteCertification(cert.id)}
+                      title="Remove certification"
+                    >
+                      ✕
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

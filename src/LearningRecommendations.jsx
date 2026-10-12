@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 
-const API_URL = "http://localhost:8080/api/progress";
+// Learning resources catalogue
 
 const learningResources = {
   java: {
@@ -142,7 +142,13 @@ function getRecommendation(skill) {
   );
 }
 
-function LearningRecommendations({ missingSkills = [] }) {
+function LearningRecommendations({ missingSkills = [], apiBase = "" }) {
+const activeApi =
+  apiBase ||
+  import.meta.env.VITE_API_URL ||
+  "https://career-skill-gap-backend.onrender.com";
+  const API_URL = `${activeApi}/api/progress`;
+
   const [progress, setProgress] = useState({});
   const [loading, setLoading] = useState(false);
   const [savingSkills, setSavingSkills] = useState({});

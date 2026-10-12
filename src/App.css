@@ -1730,3 +1730,320 @@ css
     width: 100%;
   }
 }
+
+/* ==========================================================
+   NEW ENHANCEMENTS: CAREER COMPARISON, QUICK SKILLS, DELETE, PRINT
+   ========================================================== */
+
+/* Dashboard Header Actions */
+.dashboard-header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.export-report-btn {
+  background: var(--surface) !important;
+  color: var(--primary) !important;
+  border: 1px solid var(--border) !important;
+  font-weight: 600 !important;
+  padding: 10px 18px !important;
+  border-radius: 12px !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  transition: all 0.2s ease !important;
+}
+
+.export-report-btn:hover {
+  background: var(--surface-soft) !important;
+  border-color: var(--primary) !important;
+  transform: translateY(-1px);
+}
+
+/* Career Comparison Section */
+.career-comparison-section {
+  margin: 36px 0;
+}
+
+.career-comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 20px;
+  margin-top: 18px;
+}
+
+.career-match-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  position: relative;
+}
+
+.career-match-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  border-color: var(--primary);
+}
+
+.career-match-card.selected-target {
+  border: 2px solid var(--primary);
+  background: var(--surface-soft);
+}
+
+.career-match-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.career-match-header h4 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.current-target-tag {
+  font-size: 0.72rem;
+  background: var(--primary);
+  color: #ffffff;
+  padding: 2px 8px;
+  border-radius: 6px;
+  width: fit-content;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.match-badge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.match-badge.high {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.match-badge.medium {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.match-badge.low {
+  background: rgba(79, 70, 229, 0.12);
+  color: var(--primary);
+}
+
+.match-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--border);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.match-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), #818cf8);
+  border-radius: 9999px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.match-stats {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.switch-career-btn {
+  margin-top: auto !important;
+  width: 100% !important;
+  justify-content: center !important;
+  font-weight: 600 !important;
+  padding: 9px !important;
+  border-radius: 10px !important;
+}
+
+/* Quick Skills Suggested Pills */
+.quick-skills-section {
+  background: var(--surface-soft);
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin: 18px 0;
+}
+
+.quick-skills-title {
+  margin: 0 0 10px 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.quick-skills-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.quick-skill-pill {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--primary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+}
+
+.quick-skill-pill:hover {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);
+}
+
+/* Delete Buttons for Skills & Certifications */
+.skill-card-with-delete,
+.cert-card-with-delete {
+  position: relative;
+}
+
+.delete-skill-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.delete-skill-btn:hover {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-color: var(--danger);
+  transform: scale(1.1);
+}
+
+/* Project Card Actions */
+.project-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.delete-card-btn {
+  background: transparent !important;
+  color: var(--danger) !important;
+  border: 1px solid var(--border) !important;
+  padding: 8px 14px !important;
+  border-radius: 10px !important;
+  cursor: pointer !important;
+}
+
+.delete-card-btn:hover {
+  background: var(--danger-bg) !important;
+  border-color: var(--danger) !important;
+}
+
+.skill-gap-btn-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+/* ==========================================================
+   PRINT / PDF EXPORT SYSTEM
+   ========================================================== */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #111827 !important;
+    font-size: 11pt !important;
+  }
+
+  nav,
+  .theme-toggle,
+  .nav-links,
+  .logout-button,
+  .export-report-btn,
+  .export-report-button,
+  .back-dashboard-button,
+  .secondary-button,
+  .login-button,
+  .switch-career-btn,
+  .delete-skill-btn,
+  .delete-card-btn,
+  .quick-skills-section,
+  .login-box,
+  .card-action,
+  .project-workspace-footer,
+  footer {
+    display: none !important;
+  }
+
+  .dashboard,
+  .hero,
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .feature-grid,
+  .stats-grid,
+  .career-comparison-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  .stat-card,
+  .feature-card,
+  .career-match-card {
+    border: 1px solid #d1d5db !important;
+    background: #ffffff !important;
+    color: #111827 !important;
+    box-shadow: none !important;
+    padding: 12px !important;
+    break-inside: avoid !important;
+  }
+
+  .match-progress-fill,
+  progress {
+    background: #4f46e5 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
