@@ -2804,6 +2804,79 @@ css
 }
 
 /* ==========================================================
+   AUTH FORM & SPINNER / COLD START STYLES
+   ========================================================== */
+.auth-modal-form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.auth-submit-btn {
+  margin-top: 14px !important;
+}
+
+.login-button:disabled,
+button:disabled,
+input:disabled {
+  opacity: 0.65;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.auth-spinner-container {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.auth-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2.5px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: authSpin 0.7s linear infinite;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+@keyframes authSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.auth-status-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(79, 70, 229, 0.08);
+  border: 1px solid rgba(79, 70, 229, 0.25);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin: 14px 0 6px 0;
+  font-size: 13px;
+  color: var(--primary);
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: left;
+  animation: fadeInModal 0.25s ease;
+}
+
+.auth-status-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(79, 70, 229, 0.2);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: authSpin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+/* ==========================================================
    PRINT / PDF EXPORT SYSTEM
    ========================================================== */
 @media print {
@@ -2914,6 +2987,10 @@ css
   font-weight: 750;
   color: var(--navy);
   letter-spacing: -0.2px;
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .nav-profile-chevron {
@@ -2979,23 +3056,33 @@ css
   font-weight: 850;
   color: var(--navy);
   letter-spacing: -0.3px;
-}
-
-.profile-dropdown-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 195px;
 }
 
 .profile-dropdown-email {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 175px;
-  margin-top: 1px;
+  max-width: 195px;
+  margin-top: 2px;
+}
+
+.profile-dropdown-roll-sub {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+  background: rgba(79, 70, 229, 0.08);
+  padding: 2px 7px;
+  border-radius: 5px;
+  display: inline-block;
+  margin-top: 4px;
+  letter-spacing: 0.2px;
+  width: fit-content;
 }
 
 .profile-dropdown-divider {

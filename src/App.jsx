@@ -67,19 +67,15 @@ function App() {
     () => localStorage.getItem("theme") || "light"
   );
 
-  // Student Profile state
-  const [studentId, setStudentId] = useState(
-    () => localStorage.getItem("studentId") || "24eg107e54"
-  );
+  // User Profile state
   const [currentUserName, setCurrentUserName] = useState(
-    () => localStorage.getItem("userName") || "Bhanu"
+    () => localStorage.getItem("userName") || ""
   );
   const [currentUserEmail, setCurrentUserEmail] = useState(
-    () => localStorage.getItem("userEmail") || "24eg107e54@anurag.edu.in"
+    () => localStorage.getItem("userEmail") || ""
   );
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
-  const [editStudentIdInput, setEditStudentIdInput] = useState("");
   const [editUserNameInput, setEditUserNameInput] = useState("");
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
@@ -89,6 +85,8 @@ function App() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authStatusMessage, setAuthStatusMessage] = useState("");
 
 
 
@@ -519,6 +517,7 @@ const handleEnterToNext = (event) => {
   }
 
   // Submit only when Enter is pressed on the last login/register field
+  if (authLoading) return;
   if (page === "login") {
     login();
   } else if (page === "register") {
@@ -637,19 +636,17 @@ const handleEnterToNext = (event) => {
 
   const handleOpenProfileModal = () => {
     setProfileDropdownOpen(false);
-    setEditStudentIdInput(studentId);
     setEditUserNameInput(currentUserName);
     setIsEditingProfile(false);
     setProfileModalOpen(true);
   };
 
   const handleSaveProfile = () => {
-    const sId = editStudentIdInput.trim() || studentId || "24eg107e54";
-    const uName = editUserNameInput.trim() || currentUserName || "Bhanu";
-    setStudentId(sId);
+    const uName = editUserNameInput.trim() || currentUserName;
     setCurrentUserName(uName);
-    localStorage.setItem("studentId", sId);
-    localStorage.setItem("userName", uName);
+    if (uName) {
+      localStorage.setItem("userName", uName);
+    }
     setIsEditingProfile(false);
   };
 
@@ -663,7 +660,7 @@ const handleEnterToNext = (event) => {
   // Register
   const register = async () => {
     const trimmedName = name.trim();
-    const trimmedEmail = email.trim();
+    const trimmedEmail = email.trim().toLowerCase();
 
     if (!trimmedName || !trimmedEmail || !password) {
       setMessage("INVALID CREDENTIALS OR NO PROPER DETAILS: Please fill all fields.");
@@ -686,16 +683,31 @@ const handleEnterToNext = (event) => {
       return;
     }
 
+    setAuthLoading(true);
+    setAuthStatusMessage("");
+    setMessage("");
+
+    const coldStartTimer = setTimeout(() => {
+      setAuthStatusMessage("Connecting to server... If the cloud server was asleep, waking up can take 30-60 seconds. Please wait.");
+    }, 2500);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 65000);
+
     try {
       const res = await fetch(`${API}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           name: trimmedName,
           email: trimmedEmail,
           password,
         }),
       });
+
+      clearTimeout(coldStartTimer);
+      clearTimeout(timeoutId);
 
       const rawText = await res.text();
       let data = {};
@@ -709,11 +721,8 @@ const handleEnterToNext = (event) => {
         setMessage("Registration successful! You can now log in.");
         localStorage.setItem("userName", trimmedName);
         localStorage.setItem("userEmail", trimmedEmail);
-        const sId = localStorage.getItem("studentId") || "24eg107e54";
-        localStorage.setItem("studentId", sId);
         setCurrentUserName(trimmedName);
         setCurrentUserEmail(trimmedEmail);
-        setStudentId(sId);
         setName("");
         setPassword("");
         setPage("login");
@@ -735,14 +744,23 @@ const handleEnterToNext = (event) => {
           setMessage("INVALID CREDENTIALS OR NO PROPER DETAILS: " + (data || "Registration failed."));
         }
       }
-    } catch {
-      setMessage("Unable to connect to the backend server. Please verify your connection.");
+    } catch (err) {
+      clearTimeout(coldStartTimer);
+      clearTimeout(timeoutId);
+      if (err.name === "AbortError") {
+        setMessage("Connection timed out. The server took too long to respond. Please try clicking Create Account again.");
+      } else {
+        setMessage("Unable to connect to the backend server. Please verify your connection or check if the server is running.");
+      }
+    } finally {
+      setAuthLoading(false);
+      setAuthStatusMessage("");
     }
   };
 
   // Login
   const login = async () => {
-    const trimmedEmail = email.trim();
+    const trimmedEmail = email.trim().toLowerCase();
 
     if (!trimmedEmail || !password) {
       setMessage("INVALID CREDENTIALS OR NO PROPER DETAILS: Please enter your email and password.");
@@ -755,15 +773,30 @@ const handleEnterToNext = (event) => {
       return;
     }
 
+    setAuthLoading(true);
+    setAuthStatusMessage("");
+    setMessage("");
+
+    const coldStartTimer = setTimeout(() => {
+      setAuthStatusMessage("Connecting to server... If the cloud server was asleep, waking up can take 30-60 seconds. Please wait.");
+    }, 2500);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 65000);
+
     try {
       const res = await fetch(`${API}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           email: trimmedEmail,
           password,
         }),
       });
+
+      clearTimeout(coldStartTimer);
+      clearTimeout(timeoutId);
 
       const rawText = await res.text();
       let data = {};
@@ -781,15 +814,13 @@ const handleEnterToNext = (event) => {
 
         localStorage.setItem("userId", String(data.id));
 
-        const uName = data.name || trimmedEmail.split("@")[0] || "Student";
+        const uName = data.name || trimmedEmail.split("@")[0] || "User";
         const uEmail = data.email || trimmedEmail;
-        const sId = localStorage.getItem("studentId") || "24eg107e54";
+
         localStorage.setItem("userName", uName);
         localStorage.setItem("userEmail", uEmail);
-        localStorage.setItem("studentId", sId);
         setCurrentUserName(uName);
         setCurrentUserEmail(uEmail);
-        setStudentId(sId);
 
         try {
           const userBin = JSON.parse(localStorage.getItem(`recycle_bin_${data.id}`)) || [];
@@ -802,16 +833,33 @@ const handleEnterToNext = (event) => {
         setMessage("");
         setPassword("");
         setPage("dashboard");
+
+        // Immediately load user dashboard data
+        loadSkills();
+        loadAvailableCareers();
+        if (localStorage.getItem("targetCareer")) {
+          loadSkillGaps();
+        }
       } else {
-        // If account does not exist or credentials incorrect
-        if (typeof data === "object" && data !== null && (data.status === 500 || data.error === "Internal Server Error")) {
+        if (typeof data === "object" && data !== null && data.message) {
+          setMessage(data.message);
+        } else if (typeof data === "object" && data !== null && (data.status === 500 || data.error === "Internal Server Error")) {
           setMessage("INVALID CREDENTIALS OR NO PROPER DETAILS: Account not found. Please register or create an account to login.");
         } else {
           setMessage("Account not found or invalid credentials. Please create an account or register to login.");
         }
       }
-    } catch {
-      setMessage("Unable to connect to the backend server. Please try again later.");
+    } catch (err) {
+      clearTimeout(coldStartTimer);
+      clearTimeout(timeoutId);
+      if (err.name === "AbortError") {
+        setMessage("Connection timed out. The server took too long to respond. Please click Login to try again.");
+      } else {
+        setMessage("Unable to connect to the backend server. Please verify your connection or check if the server is running.");
+      }
+    } finally {
+      setAuthLoading(false);
+      setAuthStatusMessage("");
     }
   };
 
@@ -1774,6 +1822,12 @@ const deleteProject = async (projectId) => {
   // Logout
   const logout = () => {
     localStorage.removeItem("userId");
+    localStorage.removeItem("userName");
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("studentId");
+    localStorage.removeItem("targetCareer");
+    setCurrentUserName("");
+    setCurrentUserEmail("");
     setSkillGaps([]);
     setProgressData([]);
     setCertifications([]);
@@ -1893,7 +1947,9 @@ const deleteProject = async (projectId) => {
                 aria-expanded={profileDropdownOpen}
               >
                 <StudentAvatar size={34} />
-                <span className="nav-profile-roll">{studentId || "24eg107e54"}</span>
+                <span className="nav-profile-roll" title={currentUserName || currentUserEmail}>
+                  {currentUserName || currentUserEmail?.split("@")[0] || "User"}
+                </span>
                 <span className={`nav-profile-chevron ${profileDropdownOpen ? "open" : ""}`}>▾</span>
               </button>
 
@@ -1906,9 +1962,12 @@ const deleteProject = async (projectId) => {
                   >
                     <StudentAvatar size={46} />
                     <div className="profile-dropdown-user-info">
-                      <div className="profile-dropdown-id">{studentId || "24eg107e54"}</div>
-                      <div className="profile-dropdown-name">{currentUserName || "Student"}</div>
-                      <div className="profile-dropdown-email">{currentUserEmail || "student@anurag.edu.in"}</div>
+                      <div className="profile-dropdown-id" title={currentUserName || currentUserEmail}>
+                        {currentUserName || currentUserEmail?.split("@")[0] || "User"}
+                      </div>
+                      <div className="profile-dropdown-email" title={currentUserEmail}>
+                        {currentUserEmail || "No email"}
+                      </div>
                     </div>
                   </div>
 
@@ -4352,7 +4411,13 @@ const deleteProject = async (projectId) => {
       {(page === "login" || page === "register") && (
         <div
           className="modal-overlay"
-          onClick={() => setPage("home")}
+          onClick={() => {
+            if (!authLoading) {
+              setPage("home");
+              setMessage("");
+              setAuthStatusMessage("");
+            }
+          }}
         >
           <div
             className="login-box"
@@ -4362,9 +4427,13 @@ const deleteProject = async (projectId) => {
               type="button"
               className="close-button"
               aria-label="Close login window"
+              disabled={authLoading}
               onClick={() => {
-                setPage("home");
-                setMessage("");
+                if (!authLoading) {
+                  setPage("home");
+                  setMessage("");
+                  setAuthStatusMessage("");
+                }
               }}
             >
               ×
@@ -4384,65 +4453,71 @@ const deleteProject = async (projectId) => {
                 : "Create an account to start building your career roadmap."}
             </p>
 
-            {page === "register" && (
-              <input
-                type="text"
-                placeholder="Full Name"
-                autoComplete="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    e.currentTarget.nextElementSibling?.focus();
-                  }
-                }}
-              />
-            )}
-
-            <input
-              type="email"
-              placeholder="Email Address"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  e.currentTarget.nextElementSibling?.focus();
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (authLoading) return;
+                if (page === "login") {
+                  login();
+                } else {
+                  register();
                 }
               }}
-            />
-
-<input
-  type="password"
-  placeholder="Password"
-  autoComplete={
-    page === "login" ? "current-password" : "new-password"
-  }
-  value={password}
-  onChange={(e) => setPassword(e.target.value)}
-  onKeyDown={(e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-
-      if (page === "login") {
-        void login();
-      } else {
-        void register();
-      }
-    }
-  }}
-/>
-
-
-            <button
-              type="button"
-              className="login-button"
-              onClick={page === "login" ? login : register}
+              className="auth-modal-form"
             >
-              {page === "login" ? "Login" : "Create Account"}
-            </button>
+              {page === "register" && (
+                <input
+                  type="text"
+                  placeholder="Full Name"
+                  autoComplete="name"
+                  value={name}
+                  disabled={authLoading}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              )}
+
+              <input
+                type="email"
+                placeholder="Email Address"
+                autoComplete="email"
+                value={email}
+                disabled={authLoading}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+
+              <input
+                type="password"
+                placeholder="Password"
+                autoComplete={
+                  page === "login" ? "current-password" : "new-password"
+                }
+                value={password}
+                disabled={authLoading}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+
+              <button
+                type="submit"
+                className="login-button auth-submit-btn"
+                disabled={authLoading}
+              >
+                {authLoading ? (
+                  <span className="auth-spinner-container">
+                    <span className="auth-spinner" />
+                    <span>{page === "login" ? "Logging in..." : "Creating Account..."}</span>
+                  </span>
+                ) : (
+                  page === "login" ? "Login" : "Create Account"
+                )}
+              </button>
+            </form>
+
+            {authStatusMessage && (
+              <div className="auth-status-box" role="status">
+                <span className="auth-status-spinner" />
+                <span>{authStatusMessage}</span>
+              </div>
+            )}
 
             {message && (
               <div className="auth-alert-box" role="alert">
@@ -4454,9 +4529,11 @@ const deleteProject = async (projectId) => {
                     <button
                       type="button"
                       className="inline-register-btn"
+                      disabled={authLoading}
                       onClick={() => {
                         setPage("register");
                         setMessage("");
+                        setAuthStatusMessage("");
                       }}
                     >
                       ✨ Create Account / Register Here →
@@ -4473,15 +4550,20 @@ const deleteProject = async (projectId) => {
               <span
                 role="button"
                 tabIndex={0}
+                style={{ opacity: authLoading ? 0.5 : 1, pointerEvents: authLoading ? 'none' : 'auto' }}
                 onClick={() => {
-                  setPage(page === "login" ? "register" : "login");
-                  setMessage("");
+                  if (!authLoading) {
+                    setPage(page === "login" ? "register" : "login");
+                    setMessage("");
+                    setAuthStatusMessage("");
+                  }
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
+                  if (!authLoading && (e.key === "Enter" || e.key === " ")) {
                     e.preventDefault();
                     setPage(page === "login" ? "register" : "login");
                     setMessage("");
+                    setAuthStatusMessage("");
                   }
                 }}
               >
@@ -4554,7 +4636,7 @@ const deleteProject = async (projectId) => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="profile-modal-header-banner">
-              <span className="profile-modal-univ-tag">🏛️ ANURAG UNIVERSITY</span>
+              <span className="profile-modal-univ-tag">👤 PERSONAL PROFILE</span>
               <button
                 type="button"
                 className="profile-modal-close"
@@ -4571,13 +4653,10 @@ const deleteProject = async (projectId) => {
               </div>
               <div className="profile-modal-user-titles">
                 <h2 id="profile-modal-title" className="profile-modal-name">
-                  {currentUserName || "Student"}
+                  {currentUserName || currentUserEmail?.split("@")[0] || "User"}
                 </h2>
-                <div className="profile-modal-id-badge">
-                  ROLL NO: <strong>{studentId || "24eg107e54"}</strong>
-                </div>
                 <div className="profile-modal-email-text">
-                  {currentUserEmail || "student@anurag.edu.in"}
+                  {currentUserEmail}
                 </div>
               </div>
             </div>
@@ -4585,13 +4664,12 @@ const deleteProject = async (projectId) => {
             {/* Profile info cards */}
             <div className="profile-modal-card">
               <div className="profile-card-header">
-                <span className="profile-card-title">Student Information</span>
+                <span className="profile-card-title">Personal Information</span>
                 {!isEditingProfile ? (
                   <button
                     type="button"
                     className="profile-edit-toggle-btn"
                     onClick={() => {
-                      setEditStudentIdInput(studentId);
                       setEditUserNameInput(currentUserName);
                       setIsEditingProfile(true);
                     }}
@@ -4612,37 +4690,24 @@ const deleteProject = async (projectId) => {
               {isEditingProfile ? (
                 <div className="profile-edit-form">
                   <div className="profile-field-group">
-                    <label>Student Roll Number</label>
-                    <input
-                      type="text"
-                      value={editStudentIdInput}
-                      onChange={(e) => setEditStudentIdInput(e.target.value)}
-                      placeholder="e.g. 24eg107e54"
-                    />
-                  </div>
-                  <div className="profile-field-group">
-                    <label>Student Full Name</label>
+                    <label>Full Name</label>
                     <input
                       type="text"
                       value={editUserNameInput}
                       onChange={(e) => setEditUserNameInput(e.target.value)}
-                      placeholder="e.g. Bhanu"
+                      placeholder="e.g. Your Full Name"
                     />
                   </div>
                 </div>
               ) : (
                 <div className="profile-info-grid">
                   <div className="profile-info-item">
-                    <span className="profile-info-label">Roll Number:</span>
-                    <span className="profile-info-val bold-val">{studentId || "24eg107e54"}</span>
-                  </div>
-                  <div className="profile-info-item">
                     <span className="profile-info-label">Full Name:</span>
-                    <span className="profile-info-val">{currentUserName || "Student"}</span>
+                    <span className="profile-info-val">{currentUserName || "Not set"}</span>
                   </div>
                   <div className="profile-info-item">
-                    <span className="profile-info-label">Institution:</span>
-                    <span className="profile-info-val">Anurag University</span>
+                    <span className="profile-info-label">Email:</span>
+                    <span className="profile-info-val">{currentUserEmail || "Not set"}</span>
                   </div>
                   <div className="profile-info-item">
                     <span className="profile-info-label">Target Career:</span>
